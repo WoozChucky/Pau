@@ -5,6 +5,10 @@ files:
     destination: /home/ec2-user/express-service
   - source: /package.json
     destination: /home/ec2-user/express-service
+  - source: /bin
+    destination: /home/ec2-user/express-service
+  - source: /routes
+  destination: /home/ec2-user/express-service
 hooks:
   AfterInstall:
     - location: scripts/install_dependencies
