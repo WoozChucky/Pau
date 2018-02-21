@@ -1,7 +1,7 @@
 version: 0.0
 os: linux
 files:
-  - source: /server.js
+  - source: /app.js
     destination: /home/ec2-user/express-service
   - source: /package.json
     destination: /home/ec2-user/express-service
