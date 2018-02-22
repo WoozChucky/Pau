@@ -2,7 +2,7 @@ import { NextFunction, Request, Response, Router } from "express";
 import { BaseRoute } from "./route";
 import { Blockchain } from "../../blockchain/blockchain";
 import { Block } from "../../model/block";
-import { Server } from "../../server";
+import { Server } from "../server";
 import { connectToPeers, getSockets } from '../../p2p/p2p_protocol'
 
 /**
@@ -69,7 +69,16 @@ export class IndexRoute extends BaseRoute {
 
     public mineBlock(req: Request, res: Response, next: NextFunction) {
       
+      if(req.body.data == null) {
+        this.json(req, res, {"error_message" : "data parameter is missing"})
+        return;
+      }
+
       let newBlock : Block = Server.blockchain.generateNextBlock(req.body.data);
+      if(newBlock == null) {
+        res.status(400).json({"error_message" : "could not generate block"})
+        return;
+      }
 
       this.json(req, res, newBlock);
     }

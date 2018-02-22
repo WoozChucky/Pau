@@ -1,8 +1,9 @@
 import { Block } from "../model/block";
 import * as CryptoJS from "crypto-js";
-import { Server } from "../server";
+import { Server } from "../http/server";
 import { broadcastLatest } from '../p2p/p2p_protocol'
 import { hexToBinary } from '../utils/converter';
+import { UnspentTxOut } from "../model/unspent_tx_out";
 
 // in seconds
 const BLOCK_GENERATION_INTERVAL : number = 10;
@@ -27,6 +28,8 @@ export class Blockchain {
      * At the moments this is In-Memory, but in a near future will retrieved from local storage
      */
     private chain : Block[];
+
+    private unspentTxOuts : UnspentTxOut[] = [];
 
     /** 
      * Constructor

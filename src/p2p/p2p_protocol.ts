@@ -3,7 +3,7 @@ import {Server} from 'ws';
 import { Message } from '../model/messsage';
 import { Block } from '../model/block'
 import { MessageType } from '../model/message_type';
-import * as ZNode from '../server';
+import * as ZNode from '../http/server';
 
 const sockets: WebSocket[] = [];
 
@@ -109,10 +109,13 @@ const handleBlockchainResponse = (receivedBlocks : Block[]) : void => {
     }
     const latestBlockHeld: Block = ZNode.Server.blockchain.getLatestBlock();
     if (latestBlockReceived.index > latestBlockHeld.index) {
+
         console.log('blockchain possibly behind.\nWe got: '
             + latestBlockHeld.index + ' blocks.\nPeer got: ' + latestBlockReceived.index + ' blocks.');
+
         if (latestBlockHeld.hash === latestBlockReceived.previousHash) {
             if (ZNode.Server.blockchain.addBlock(latestBlockReceived)) {
+                console.log('Added missing block ' + latestBlockReceived.index);
                 broadcast(getLatestBlockMsg());
             }
         } else if (receivedBlocks.length === 1) {

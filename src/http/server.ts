@@ -5,9 +5,9 @@ import * as logger from "morgan";
 import * as path from "path";
 import errorHandler = require("errorhandler");
 import methodOverride = require("method-override");
-import { initP2PServer, connectToPeers } from './p2p/p2p_protocol'
-import { IndexRoute } from "./http/routes/index";
-import { Blockchain } from "./blockchain/blockchain";
+import { initP2PServer, connectToPeers } from './../p2p/p2p_protocol'
+import { IndexRoute } from "./../http/routes/index";
+import { Blockchain } from "./../blockchain/blockchain";
 
 /**
  * The server.
