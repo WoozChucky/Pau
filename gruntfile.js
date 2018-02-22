@@ -27,9 +27,10 @@ module.exports = function(grunt) {
             dest: "./dist"
           }],
           options: {
+            experimentalDecorators: true,
             module: "commonjs",
             target: "es6",
-            sourceMap: false,
+            sourceMap: true,
             rootDir: "src"
           }
         }

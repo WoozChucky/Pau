@@ -5,6 +5,9 @@ import * as logger from "morgan";
 import * as path from "path";
 import errorHandler = require("errorhandler");
 import methodOverride = require("method-override");
+import { initP2PServer, connectToPeers } from './p2p/p2p_protocol'
+import { IndexRoute } from "./http/routes/index";
+import { Blockchain } from "./blockchain/blockchain";
 
 /**
  * The server.
@@ -13,8 +16,11 @@ import methodOverride = require("method-override");
  */
 export class Server {
 
-    public app: express.Application;
-  
+    private app: express.Application;
+    private httpPort : any;
+
+    public static blockchain : Blockchain;
+
     /**
      * Bootstrap the application.
      *
@@ -53,8 +59,8 @@ export class Server {
      * @class Server
      * @method api
      */
-    public api() {
-      //empty for now
+    private api() {
+
     }
   
     /**
@@ -63,8 +69,10 @@ export class Server {
      * @class Server
      * @method config
      */
-    public config() {
-      
+    private config() {
+
+        Server.blockchain = new Blockchain();
+
         //use logger middleware
         this.app.use(logger("dev"));
 
@@ -99,7 +107,58 @@ export class Server {
      * @class Server
      * @method api
      */
-    public routes() {
-      //empty for now
+    private routes() {
+      
+        let router : express.Router;
+        router = express.Router();
+
+        IndexRoute.create(router);
+
+        //use router middleware
+        this.app.use(router);
+
     }
+
+    private onListening() : void {
+        console.log('Listening on port ' + this.httpPort);
+    }
+
+    private onError(error : any) : void {
+        if (error.syscall !== 'listen') {
+            throw error;
+          }
+        
+          var bind = typeof this.httpPort === 'string'
+            ? 'Pipe ' + this.httpPort
+            : 'Port ' + this.httpPort;
+        
+          // handle specific listen errors with friendly messages
+          switch (error.code) {
+            case 'EACCES':
+              console.error(bind + ' requires elevated privileges');
+              process.exit(1);
+              break;
+            case 'EADDRINUSE':
+              console.error(bind + ' is already in use');
+              process.exit(1);
+              break;
+            default:
+              throw error;
+          }
+    }
+
+    public listen(httpPort : any, p2pPort : any, initialPeers : any) : void {
+
+        this.httpPort = httpPort;
+
+        this.app.listen(httpPort);
+
+        this.app.on('listening', this.onListening);
+        this.app.on('error', this.onError);
+
+        initP2PServer(p2pPort);
+
+        connectToPeers(initialPeers);
+    }
+
   }

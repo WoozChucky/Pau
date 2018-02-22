@@ -1,8 +1,12 @@
 
 node_modules/
 
-\.DS_Store
-
 dist/
 
 \.tscache/
+
+\.vscode/
+
+\.idea/
+
+\.DS_Store
