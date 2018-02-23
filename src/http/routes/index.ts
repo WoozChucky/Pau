@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response, Router } from "express";
 import { BaseRoute } from "./route";
-import { Blockchain } from "../../blockchain/blockchain";
 import { Block } from "../../model/block";
 import { Server } from "../server";
 import { connectToPeers, getSockets } from '../../p2p/p2p_protocol'
+import { generatenextBlockWithTransaction, getAccountBalance, generateRawNextBlock, generateNextBlock, getBlockchain } from "../../blockchain/blockchain";
 
 /**
  * / route
@@ -31,6 +31,18 @@ export class IndexRoute extends BaseRoute {
       router.post("/mineBlock", (req: Request, res: Response, next: NextFunction) => {
         new IndexRoute().mineBlock(req, res, next);
       });
+
+      router.post('mineRawBlock', (req: Request, res: Response, next: NextFunction) => {
+        new IndexRoute().mineRawBlock(req, res, next);
+      });
+
+      router.post('/mineTransaction', (req: Request, res: Response, next: NextFunction) => {
+        new IndexRoute().mineTransaction(req, res, next);
+      });
+
+      router.get('/balance', (req: Request, res: Response, next: NextFunction) => {
+        new IndexRoute().getBalance(req, res, next);
+      })
 
       router.get('/peers', (req: Request, res: Response, next: NextFunction) => {
         new IndexRoute().getPeers(req, res, next);
@@ -62,25 +74,58 @@ export class IndexRoute extends BaseRoute {
      */
     public getBlocks(req: Request, res: Response, next: NextFunction) {
   
-      let chain = Server.blockchain.getChain();
+      let chain = getBlockchain();
 
       this.json(req, res, chain);
     }
 
     public mineBlock(req: Request, res: Response, next: NextFunction) {
       
-      if(req.body.data == null) {
-        this.json(req, res, {"error_message" : "data parameter is missing"})
-        return;
-      }
-
-      let newBlock : Block = Server.blockchain.generateNextBlock(req.body.data);
+      let newBlock : Block = generateNextBlock();
       if(newBlock == null) {
         res.status(400).json({"error_message" : "could not generate block"})
         return;
       }
 
       this.json(req, res, newBlock);
+    }
+
+    public mineRawBlock(req: Request, res: Response, next: NextFunction) {
+      
+      if(req.body.data == null) {
+        this.json(req, res, {"error_message" : "data parameter is missing"})
+        return;
+      }
+
+      let newBlock : Block = generateRawNextBlock(req.body.data);
+      if(newBlock == null) {
+        res.status(400).json({"error_message" : "could not generate block"})
+        return;
+      }
+
+      this.json(req, res, newBlock);
+    }
+
+    public mineTransaction(req: Request, res: Response, next: NextFunction) {
+      
+      let address = req.body.address;
+      let amount = req.body.amount;
+      try {
+        let output = generatenextBlockWithTransaction(address, amount);
+        this.json(req, res, output);
+      } catch (e) {
+        console.log(e.message);
+        res.status(400).send(e.message);
+      }
+
+    }
+
+    public getBalance(req: Request, res: Response, next: NextFunction) {
+
+      let balance = getAccountBalance();
+
+      this.json(req, res, balance);
+
     }
 
     public getPeers(req: Request, res: Response, next: NextFunction) {

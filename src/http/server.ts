@@ -7,7 +7,6 @@ import errorHandler = require("errorhandler");
 import methodOverride = require("method-override");
 import { initP2PServer, connectToPeers } from './../p2p/p2p_protocol'
 import { IndexRoute } from "./../http/routes/index";
-import { Blockchain } from "./../blockchain/blockchain";
 
 /**
  * The server.
@@ -18,8 +17,6 @@ export class Server {
 
     private app: express.Application;
     private httpPort : any;
-
-    public static blockchain : Blockchain;
 
     /**
      * Bootstrap the application.
@@ -70,8 +67,6 @@ export class Server {
      * @method config
      */
     private config() {
-
-        Server.blockchain = new Blockchain();
 
         //use logger middleware
         this.app.use(logger("dev"));
@@ -157,8 +152,6 @@ export class Server {
         this.app.on('error', this.onError);
 
         initP2PServer(p2pPort);
-
-        connectToPeers(initialPeers);
     }
 
   }

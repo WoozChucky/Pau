@@ -1,5 +1,5 @@
 import { Server } from './http/server';
-
+import { initWallet } from './blockchain/wallet';
 
 /**
  * Normalize a port into a number, string, or false.
@@ -28,3 +28,5 @@ let initialPeers = process.env.PEERS ? process.env.PEERS.split(',') : [];
 let server = new Server();
 
 server.listen(httpPort, p2pPort, initialPeers);
+
+initWallet();
