@@ -1,13 +1,13 @@
 version: 0.0
 os: linux
 files:
-  - source: /app.js
+  - source: /src
     destination: /home/ec2-user/express-service
   - source: /package.json
     destination: /home/ec2-user/express-service
-  - source: /bin
+  - source: /gruntfile.json
     destination: /home/ec2-user/express-service
-  - source: /routes
+  - source: /tsconfig.json
   destination: /home/ec2-user/express-service
 hooks:
   AfterInstall:
