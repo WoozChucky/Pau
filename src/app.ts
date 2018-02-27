@@ -1,32 +1,75 @@
-import { Server } from './http/server';
+import { HttpServer } from './httpServer/server';
 import { initWallet } from './blockchain/wallet';
+import { Application } from './application';
+import { ArgumentParser } from 'argparse';
 
-/**
- * Normalize a port into a number, string, or false.
- */
+let argParser = new ArgumentParser({
+    version: '0.0.1',
+    addHelp: true,
+    description: "Description"
+});
 
-function normalizePort(val : any) : any {
-    var port = parseInt(val, 10);
-
-    if (isNaN(port)) {
-    // named pipe
-    return val;
+argParser.addArgument(
+    ['--http-port'],
+    {
+        help: "--http-port 3000",
+        type: 'int',
+        defaultValue: 3000,
+        nargs: 1,
+        dest: 'HTTP_PORT',
+        metavar: '<HTTP_PORT>'
     }
+);
 
-    if (port >= 0) {
-    // port number
-    return port;
+argParser.addArgument(
+    ['--p2p-port'],
+    {
+        help: "--p2p-port 6000",
+        type: 'int',
+        defaultValue: 6000,
+        nargs: 1,
+        dest: 'P2P_PORT',
+        metavar: '<P2P_PORT>',
     }
+);
 
-    return false;
-}
+argParser.addArgument(
+    ['--data'],
+    {
+        help: "--data dist/data/db",
+        type: 'string',
+        defaultValue: 'dist/data/db',
+        nargs: 1,
+        dest: 'DATA',
+        metavar: '<DATA>'
+    }
+);
 
-let httpPort = normalizePort(process.env.HTTP_PORT || 3000);
-let p2pPort : number = parseInt(process.env.P2P_PORT) || 6000;
-let initialPeers = process.env.PEERS ? process.env.PEERS.split(',') : [];
+argParser.addArgument(
+    ['--name'],
+    {
+        help: "--name node1",
+        type: 'string',
+        required: true,
+        nargs: 1,
+        dest: 'NAME',
+        metavar: '<NAME>'
+    }
+);
 
-let server = new Server();
+let parsedArgs = argParser.parseArgs();
 
-server.listen(httpPort, p2pPort, initialPeers);
+console.log(parsedArgs);
 
-initWallet();
+let httpPort = parsedArgs["HTTP_PORT"];
+let p2pPort = parsedArgs["P2P_PORT"];
+let dataFolder = parsedArgs["DATA"];
+let name = parsedArgs["NAME"][0];
+
+//let server = new Server();
+
+//server.listen(httpPort, p2pPort, initialPeers);
+
+//initWallet();
+
+new Application(httpPort, p2pPort, name, dataFolder).initialize();

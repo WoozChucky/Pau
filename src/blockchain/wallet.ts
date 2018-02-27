@@ -67,7 +67,7 @@ const findTxOutsForAmount = (amount: number, myUnspentTxOuts: UnspentTxOut[]) =>
     throw Error(eMsg);
 };
 
-const createTxOuts = (receiverAddress: string, myAddress: string, amount, leftOverAmount: number) => {
+const createTxOuts = (receiverAddress: string, myAddress: string, amount : number, leftOverAmount: number) => {
     const txOut1: TxOut = new TxOut(receiverAddress, amount);
     if (leftOverAmount === 0) {
         return [txOut1];

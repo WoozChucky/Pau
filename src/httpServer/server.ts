@@ -6,29 +6,18 @@ import * as path from "path";
 import errorHandler = require("errorhandler");
 import methodOverride = require("method-override");
 import { initP2PServer, connectToPeers } from './../p2p/p2p_protocol'
-import { IndexRoute } from "./../http/routes/index";
+import { IndexRoute } from "./../httpServer/routes/index";
+import { EventEmitter } from "events";
 
 /**
  * The server.
  *
  * @class Server
  */
-export class Server {
+export class HttpServer extends EventEmitter {
 
     private app: express.Application;
     private httpPort : any;
-
-    /**
-     * Bootstrap the application.
-     *
-     * @class Server
-     * @method bootstrap
-     * @static
-     * @return {ng.auto.IInjectorService} Returns the newly created injector for this app.
-     */
-    public static bootstrap(): Server {
-      return new Server();
-    }
   
     /**
      * Constructor.
@@ -36,7 +25,10 @@ export class Server {
      * @class Server
      * @constructor
      */
-    constructor() {
+    constructor(port : number) {
+      super();
+      this.httpPort = port;
+
       //create expressjs application
       this.app = express();
   
@@ -114,20 +106,16 @@ export class Server {
 
     }
 
-    private onListening() : void {
-        console.log('Listening on port ' + this.httpPort);
-    }
-
     private onError(error : any) : void {
         if (error.syscall !== 'listen') {
             throw error;
           }
-        
-          var bind = typeof this.httpPort === 'string'
+
+        let bind = typeof this.httpPort === 'string'
             ? 'Pipe ' + this.httpPort
             : 'Port ' + this.httpPort;
-        
-          // handle specific listen errors with friendly messages
+
+        // handle specific listen errors with friendly messages
           switch (error.code) {
             case 'EACCES':
               console.error(bind + ' requires elevated privileges');
@@ -142,16 +130,15 @@ export class Server {
           }
     }
 
-    public listen(httpPort : any, p2pPort : any, initialPeers : any) : void {
+    public listen() : void {
 
-        this.httpPort = httpPort;
+        this.app.on('error', this.onError.bind(this));
 
-        this.app.listen(httpPort);
+        this.app.listen(this.httpPort);
 
-        this.app.on('listening', this.onListening);
-        this.app.on('error', this.onError);
+        this.emit('listening', this.httpPort);
 
-        initP2PServer(p2pPort);
+        //initP2PServer(p2pPort);
     }
 
   }

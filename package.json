@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@types/crypto-js": "^3.1.38",
+    "argparse": "^1.0.10",
     "body-parser": "~1.18.2",
     "cookie-parser": "~1.4.3",
     "crypto-js": "^3.1.9-1",
@@ -20,6 +21,8 @@
     "elliptic": "^6.4.0",
     "errorhandler": "^1.5.0",
     "express": "~4.15.5",
+    "leveldown": "^3.0.0",
+    "levelup": "^2.0.2",
     "lodash": "^4.17.5",
     "method-override": "^2.3.10",
     "mongoose": "^5.0.6",
@@ -28,6 +31,7 @@
     "ws": "^4.1.0"
   },
   "devDependencies": {
+    "@types/argparse": "^1.0.33",
     "@types/body-parser": "^1.16.8",
     "@types/cookie-parser": "^1.4.1",
     "@types/errorhandler": "0.0.32",
@@ -36,6 +40,7 @@
     "@types/mongodb": "^3.0.5",
     "@types/mongoose": "^5.0.2",
     "@types/morgan": "^1.7.35",
+    "@types/node": "^9.4.6",
     "@types/ws": "^4.0.1",
     "grunt": "^1.0.2",
     "grunt-contrib-copy": "^1.0.0",

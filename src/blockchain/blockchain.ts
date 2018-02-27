@@ -1,7 +1,7 @@
 import { Block } from "../model/block";
 import * as CryptoJS from "crypto-js";
 import * as _ from 'lodash';
-import { Server } from "../http/server";
+import { HttpServer } from "../httpServer/server";
 import { broadcastLatest, broadCastTransactionPool } from '../p2p/p2p_protocol'
 import { hexToBinary } from '../utils/converter';
 import { UnspentTxOut } from "../model/unspent_tx_out";
