@@ -1,6 +1,7 @@
 import {Block} from "../model/block";
 import {Semaphore} from "prex";
 import {getBlockchain} from "./blockchain";
+import {Database} from "../database";
 
 export type Blockchain = Block[];
 
@@ -8,18 +9,30 @@ const resourceLock = new Semaphore(1);
 
 export class BlockchainManager {
 
-    private static chain : Block[];
+    private static chain : Blockchain;
 
     private static inited : boolean = false;
 
-    public static initialize() : void {
+    public static async initialize() : Promise<void> {
         if(BlockchainManager.inited) {
             throw new Error("BlockchainManager is already initialized.");
         }
 
-        BlockchainManager.chain = getBlockchain();
+        await resourceLock.wait();
+
+        Database.get('CHAIN')
+            .then((chain : string) => {
+                BlockchainManager.chain  = JSON.parse(chain);
+            })
+            .catch(err => {
+                console.log('Error loading blockchain from local database. Using genesis block.');
+
+                BlockchainManager.chain = getBlockchain();
+            });
 
         BlockchainManager.inited = true;
+
+        resourceLock.release();
     }
 
     public static async getChain() : Promise<Blockchain> {
@@ -95,4 +108,20 @@ export class BlockchainManager {
         resourceLock.release();
     }
 
+    public static async saveLocally() : Promise<void> {
+
+        await resourceLock.wait();
+
+        let chain = BlockchainManager.chain;
+
+        resourceLock.release();
+
+        return Database.put('CHAIN', JSON.stringify(chain))
+            .then(() => {
+                console.log('Safely written blockchain database!')
+            })
+            .catch(err => {
+                console.log(err);
+            });
+    }
 }
