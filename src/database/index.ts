@@ -1,36 +1,55 @@
-let levelup = require('levelup')
-let leveldown = require('leveldown')
+let levelup = require('levelup');
+let leveldown = require('leveldown');
 
 export class Database {
 
-    private db : any;
+    private static db : any;
 
-    constructor(location : string) {
-        
-        this.db = levelup(leveldown(location), {
+    private static initialized : boolean = false;
+
+    public static initialize(location : string) : void {
+        if(Database.initialized) {
+            throw new Error("Database already initialized");
+        }
+
+        Database.db = levelup(leveldown(location), {
             createIfMissing : true,
             errorIfExists : false,
             compression : true,
-            keyEnconding : 'utf8',
+            keyEncoding : 'utf8',
             valueEncoding : 'utf8' //JSON also supported
         });
-        
-    }
 
-    public async get(key : string) : Promise<any> {
-
-        return await this.db.get(key);
-    }
-
-    public async put(key : string, value : any) : Promise<void> {
-
-        return await this.db.put(key, value);
+        Database.initialized = true;
 
     }
 
-    public async delete(key : string) : Promise<void> {
+    public static async get(key : string) : Promise<any> {
 
-        return await this.db.delete(key);
+        if(!Database.initialized) {
+            throw new Error("Database not initialized");
+        }
+
+        return await Database.db.get(key);
+    }
+
+    public static async put(key : string, value : any) : Promise<void> {
+
+        if(!Database.initialized) {
+            throw new Error("Database not initialized");
+        }
+
+        return await Database.db.put(key, value);
+
+    }
+
+    public static async delete(key : string) : Promise<void> {
+
+        if(!Database.initialized) {
+            throw new Error("Database not initialized");
+        }
+
+        return await Database.db.delete(key);
 
     }
 

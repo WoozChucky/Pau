@@ -4,6 +4,8 @@ import { Block } from "../../model/block";
 import { HttpServer } from "../server";
 import { connectToPeers, getSockets } from '../../p2p/p2p_protocol'
 import { generatenextBlockWithTransaction, getAccountBalance, generateRawNextBlock, generateNextBlock, getBlockchain } from "../../blockchain/blockchain";
+import {Database} from "../../database";
+import {BlockRoute} from "./block";
 
 /**
  * / route
@@ -12,79 +14,8 @@ import { generatenextBlockWithTransaction, getAccountBalance, generateRawNextBlo
  */
 export class IndexRoute extends BaseRoute {
 
-    /**
-     * Create the routes.
-     *
-     * @class IndexRoute
-     * @method create
-     * @static
-     */
-    public static create(router: Router) {
-      //log
-      console.log("[IndexRoute::create] Creating index route.");
-  
-      //add home page route
-      router.get("/blocks", (req: Request, res: Response, next: NextFunction) => {
-        new IndexRoute().getBlocks(req, res, next);
-      });
+    private router : Router;
 
-      router.get('/blocks/:hash', (req: Request, res: Response, next: NextFunction) => {
-        new IndexRoute().getBlock(req, res, next);
-      });
-
-      router.get('/transaction/:id', (req: Request, res: Response, next: NextFunction) => {
-        new IndexRoute().getTransaction(req, res, next);
-      });
-
-      router.get('/address/:address', (req: Request, res: Response, next: NextFunction) => {
-        new IndexRoute().getAddress(req, res, next);
-      });
-
-      router.get('/unspentTxOuts', (req: Request, res: Response, next: NextFunction) => {
-        new IndexRoute().getUnspentTxOuts(req, res, next);
-      });
-
-      router.get('/myUnspentTxOuts', (req: Request, res: Response, next: NextFunction) => {
-        new IndexRoute().getMyUnspentTxOuts(req, res, next);
-      });
-
-      router.post('mineRawBlock', (req: Request, res: Response, next: NextFunction) => {
-        new IndexRoute().mineRawBlock(req, res, next);
-      });
-
-      router.post("/mineBlock", (req: Request, res: Response, next: NextFunction) => {
-        new IndexRoute().mineBlock(req, res, next);
-      });
-
-      router.get('/balance', (req: Request, res: Response, next: NextFunction) => {
-        new IndexRoute().getBalance(req, res, next);
-      });
-
-      router.get('/address', (req: Request, res: Response, next: NextFunction) => {
-        new IndexRoute().getAddress(req, res, next);
-      });
-
-      router.post('/mineTransaction', (req: Request, res: Response, next: NextFunction) => {
-        new IndexRoute().mineTransaction(req, res, next);
-      });
-
-      router.post('/sendTransaction', (req: Request, res: Response, next: NextFunction) => {
-        new IndexRoute().sendTransaction(req, res, next);
-      });
-
-      router.get('/transactionPool', (req: Request, res: Response, next: NextFunction) => {
-        new IndexRoute().getTransactionPool(req, res, next);
-      });
-
-      router.get('/peers', (req: Request, res: Response, next: NextFunction) => {
-        new IndexRoute().getPeers(req, res, next);
-      });
-
-      router.post('/addPeer', (req: Request, res: Response, next: NextFunction) => {
-        new IndexRoute().addPeer(req, res, next);
-      });
-    }
-  
     /**
      * Constructor
      *
@@ -92,9 +23,69 @@ export class IndexRoute extends BaseRoute {
      * @constructor
      */
     constructor() {
-      super();
+        super();
+
+        this.router = Router();
+
+        this.router.use('/blocks', new BlockRoute().use());
+
+        this.router.get('/transaction/:id', (req: Request, res: Response, next: NextFunction) => {
+            this.getTransaction(req, res, next);
+        });
+
+        this.router.get('/address/:address', (req: Request, res: Response, next: NextFunction) => {
+            this.getAddress(req, res, next);
+        });
+
+        this.router.get('/unspentTxOuts', (req: Request, res: Response, next: NextFunction) => {
+            this.getUnspentTxOuts(req, res, next);
+        });
+
+        this.router.get('/myUnspentTxOuts', (req: Request, res: Response, next: NextFunction) => {
+            this.getMyUnspentTxOuts(req, res, next);
+        });
+
+        this.router.post('mineRawBlock', (req: Request, res: Response, next: NextFunction) => {
+            this.mineRawBlock(req, res, next);
+        });
+
+        this.router.post("/mineBlock", (req: Request, res: Response, next: NextFunction) => {
+            this.mineBlock(req, res, next);
+        });
+
+        this.router.get('/balance', (req: Request, res: Response, next: NextFunction) => {
+            this.getBalance(req, res, next);
+        });
+
+        this.router.get('/address', (req: Request, res: Response, next: NextFunction) => {
+            this.getAddress(req, res, next);
+        });
+
+        this.router.post('/mineTransaction', (req: Request, res: Response, next: NextFunction) => {
+            this.mineTransaction(req, res, next);
+        });
+
+        this.router.post('/sendTransaction', (req: Request, res: Response, next: NextFunction) => {
+            this.sendTransaction(req, res, next);
+        });
+
+        this.router.get('/transactionPool', (req: Request, res: Response, next: NextFunction) => {
+            this.getTransactionPool(req, res, next);
+        });
+
+        this.router.get('/peers', (req: Request, res: Response, next: NextFunction) => {
+            this.getPeers(req, res, next);
+        });
+
+        this.router.post('/addPeer', (req: Request, res: Response, next: NextFunction) => {
+            this.addPeer(req, res, next);
+        });
     }
-  
+
+    public use() : Router {
+        return this.router;
+    }
+
     /**
      * The home page route.
      *
@@ -104,110 +95,197 @@ export class IndexRoute extends BaseRoute {
      * @param res {Response} The express Response object.
      * @param next {NextFunction} Execute the next method.
      */
-    public getBlocks(req: Request, res: Response, next: NextFunction) {
-  
-      let chain = getBlockchain();
-
-      this.json(req, res, 200, chain);
-    }
-
-    public getBlock(req: Request, res: Response, next: NextFunction) {
-
-      this.json(req, res, 200);
-    }
-
     public getTransaction(req: Request, res: Response, next: NextFunction) {
 
-      this.json(req, res, 200);
+      BaseRoute.json(req, res, 200);
     }
 
+    /**
+     * The home page route.
+     *
+     * @class IndexRoute
+     * @method index
+     * @param req {Request} The express Request object.
+     * @param res {Response} The express Response object.
+     * @param next {NextFunction} Execute the next method.
+     */
     public getAddress(req: Request, res: Response, next: NextFunction) {
 
-      this.json(req, res, 200);
+      BaseRoute.json(req, res, 200);
     }
 
+    /**
+     * The home page route.
+     *
+     * @class IndexRoute
+     * @method index
+     * @param req {Request} The express Request object.
+     * @param res {Response} The express Response object.
+     * @param next {NextFunction} Execute the next method.
+     */
     public getUnspentTxOuts(req: Request, res: Response, next: NextFunction) {
 
-      this.json(req, res, 200);
+      BaseRoute.json(req, res, 200);
     }
 
+    /**
+     * The home page route.
+     *
+     * @class IndexRoute
+     * @method index
+     * @param req {Request} The express Request object.
+     * @param res {Response} The express Response object.
+     * @param next {NextFunction} Execute the next method.
+     */
     public getMyUnspentTxOuts(req: Request, res: Response, next: NextFunction) {
 
-      this.json(req, res, 200);
+      BaseRoute.json(req, res, 200);
     }
 
+    /**
+     * The home page route.
+     *
+     * @class IndexRoute
+     * @method index
+     * @param req {Request} The express Request object.
+     * @param res {Response} The express Response object.
+     * @param next {NextFunction} Execute the next method.
+     */
     public sendTransaction(req: Request, res: Response, next: NextFunction) {
 
-      this.json(req, res, 200);
+      BaseRoute.json(req, res, 200);
     }
 
+    /**
+     * The home page route.
+     *
+     * @class IndexRoute
+     * @method index
+     * @param req {Request} The express Request object.
+     * @param res {Response} The express Response object.
+     * @param next {NextFunction} Execute the next method.
+     */
     public getTransactionPool(req: Request, res: Response, next: NextFunction) {
 
-      this.json(req, res, 200);
+      BaseRoute.json(req, res, 200);
     }
 
+    /**
+     * The home page route.
+     *
+     * @class IndexRoute
+     * @method index
+     * @param req {Request} The express Request object.
+     * @param res {Response} The express Response object.
+     * @param next {NextFunction} Execute the next method.
+     */
     public mineBlock(req: Request, res: Response, next: NextFunction) {
 
       let newBlock : Block = generateNextBlock();
       if(newBlock == null) {
-        this.json(req, res, 200, {"error_message" : "could not generate block"})
+        BaseRoute.json(req, res, 200, {"error_message" : "could not generate block"});
         return;
       }
 
-      this.json(req, res, 200, newBlock);
+      BaseRoute.json(req, res, 200, newBlock);
     }
 
+    /**
+     * The home page route.
+     *
+     * @class IndexRoute
+     * @method index
+     * @param req {Request} The express Request object.
+     * @param res {Response} The express Response object.
+     * @param next {NextFunction} Execute the next method.
+     */
     public mineRawBlock(req: Request, res: Response, next: NextFunction) {
       
       if(req.body.data == null) {
-        this.json(req, res, 400, {"error_message" : "data parameter is missing"})
+        BaseRoute.json(req, res, 400, {"error_message" : "data parameter is missing"});
         return;
       }
 
       let newBlock : Block = generateRawNextBlock(req.body.data);
       if(newBlock == null) {
-        this.json(req, res, 400, {"error_message" : "could not generate block"})
+        BaseRoute.json(req, res, 400, {"error_message" : "could not generate block"});
         return;
       }
 
-      this.json(req, res, 200, newBlock);
+      BaseRoute.json(req, res, 200, newBlock);
     }
 
+    /**
+     * The home page route.
+     *
+     * @class IndexRoute
+     * @method index
+     * @param req {Request} The express Request object.
+     * @param res {Response} The express Response object.
+     * @param next {NextFunction} Execute the next method.
+     */
     public mineTransaction(req: Request, res: Response, next: NextFunction) {
       
       let address = req.body.address;
       let amount = req.body.amount;
       try {
         let output = generatenextBlockWithTransaction(address, amount);
-        this.json(req, res, 200, output);
+        BaseRoute.json(req, res, 200, output);
       } catch (e) {
         console.log(e.message);
-        this.json(req, res, 400, e.message);
+        BaseRoute.json(req, res, 400, e.message);
       }
 
     }
 
+    /**
+     * The home page route.
+     *
+     * @class IndexRoute
+     * @method index
+     * @param req {Request} The express Request object.
+     * @param res {Response} The express Response object.
+     * @param next {NextFunction} Execute the next method.
+     */
     public getBalance(req: Request, res: Response, next: NextFunction) {
 
       let balance = getAccountBalance();
 
-      this.json(req, res, balance);
+      BaseRoute.json(req, res, balance);
 
     }
 
+    /**
+     * The home page route.
+     *
+     * @class IndexRoute
+     * @method index
+     * @param req {Request} The express Request object.
+     * @param res {Response} The express Response object.
+     * @param next {NextFunction} Execute the next method.
+     */
     public getPeers(req: Request, res: Response, next: NextFunction) {
 
       let output = getSockets().map((s : any) => s._socket.remoteAddress + ':' + s._socket.remotePort);
 
-      this.json(req, res, 200, output);
+      BaseRoute.json(req, res, 200, output);
 
     }
 
+    /**
+     * The home page route.
+     *
+     * @class IndexRoute
+     * @method index
+     * @param req {Request} The express Request object.
+     * @param res {Response} The express Response object.
+     * @param next {NextFunction} Execute the next method.
+     */
     public addPeer(req: Request, res: Response, next: NextFunction) {
 
       connectToPeers(req.body.peer);
 
-      this.json(req, res, 200);
+      BaseRoute.json(req, res, 200);
 
     }
   }

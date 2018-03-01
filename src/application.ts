@@ -1,6 +1,7 @@
 import { Database } from './database';
 import { FileSystem } from './utils/filesystem';
 import { HttpServer } from './httpServer/server';
+import {BlockchainManager} from "./blockchain/blockchain_manager";
 
 export class Application {
 
@@ -9,7 +10,6 @@ export class Application {
     private name : string;
     private dataFolder : string;
 
-    private db : Database;
     private httpServer : HttpServer;
 
     constructor(httpPort : number, p2pPort : number, name : string, dataLocation : string) {
@@ -20,7 +20,9 @@ export class Application {
 
         FileSystem.createFolderSync(this.dataFolder);
 
-        this.db = new Database(this.dataFolder + '/' + name);
+        BlockchainManager.initialize();
+        Database.initialize(this.dataFolder + '/' + name);
+
         this.httpServer = new HttpServer(httpPort);
     }
 
