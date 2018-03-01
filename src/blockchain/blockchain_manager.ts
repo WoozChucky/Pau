@@ -2,6 +2,8 @@ import {Block} from "../model/block";
 import {Semaphore} from "prex";
 import {getBlockchain} from "./blockchain";
 
+export type Blockchain = Block[];
+
 const resourceLock = new Semaphore(1);
 
 export class BlockchainManager {
@@ -20,7 +22,7 @@ export class BlockchainManager {
         BlockchainManager.inited = true;
     }
 
-    public static async getChain() : Promise<Block[]> {
+    public static async getChain() : Promise<Blockchain> {
 
         if(!BlockchainManager.inited) {
             throw new Error("BlockchainManager is not initialized.");
@@ -33,6 +35,28 @@ export class BlockchainManager {
         resourceLock.release();
 
         return chain;
+
+    }
+
+    public static async getLastestBlock() : Promise<Block> {
+
+        if(!BlockchainManager.inited) {
+            throw new Error("BlockchainManager is not initialized.");
+        }
+
+        await resourceLock.wait();
+
+        let chain = BlockchainManager.chain;
+
+        let block = chain[chain.length - 1];
+
+        resourceLock.release();
+
+        if(block == undefined) {
+            throw new Error("Block not found");
+        }
+
+        return block;
 
     }
 

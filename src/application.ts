@@ -1,7 +1,8 @@
 import { Database } from './database';
 import { FileSystem } from './utils/filesystem';
 import { HttpServer } from './httpServer/server';
-import {BlockchainManager} from "./blockchain/blockchain_manager";
+import { BlockchainManager } from "./blockchain/blockchain_manager";
+import { P2PServer } from "./p2p/p2p_server";
 
 export class Application {
 
@@ -11,6 +12,7 @@ export class Application {
     private dataFolder : string;
 
     private httpServer : HttpServer;
+    private p2pServer : P2PServer;
 
     constructor(httpPort : number, p2pPort : number, name : string, dataLocation : string) {
         this.httpPort = httpPort;
@@ -24,6 +26,7 @@ export class Application {
         Database.initialize(this.dataFolder + '/' + name);
 
         this.httpServer = new HttpServer(httpPort);
+        this.p2pServer = new P2PServer(p2pPort);
     }
 
     public initialize() : void {
@@ -33,11 +36,8 @@ export class Application {
         });
         
         this.httpServer.listen();
+        this.p2pServer.start();
             
-    }
-
-    private log(output : any) : void {
-        console.log(output);
     }
 
 }
