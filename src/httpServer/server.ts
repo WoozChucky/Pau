@@ -2,11 +2,10 @@ import * as bodyParser from "body-parser";
 import * as cookieParser from "cookie-parser";
 import * as express from "express";
 import * as logger from "morgan";
-import * as path from "path";
 import errorHandler = require("errorhandler");
 import methodOverride = require("method-override");
 import { initP2PServer, connectToPeers } from './../p2p/p2p_protocol'
-import { IndexRoute } from "./../httpServer/routes/index";
+import { IndexRoute } from "./routes";
 import { EventEmitter } from "events";
 
 /**
@@ -17,6 +16,7 @@ import { EventEmitter } from "events";
 export class HttpServer extends EventEmitter {
 
     private app: express.Application;
+    private router : express.Router;
     private httpPort : any;
   
     /**
@@ -31,6 +31,8 @@ export class HttpServer extends EventEmitter {
 
       //create expressjs application
       this.app = express();
+
+      this.router = express.Router();
   
       //configure application
       this.config();
@@ -48,7 +50,7 @@ export class HttpServer extends EventEmitter {
      * @class Server
      * @method api
      */
-    private api() {
+    private api() : void {
 
     }
   
@@ -58,15 +60,15 @@ export class HttpServer extends EventEmitter {
      * @class Server
      * @method config
      */
-    private config() {
+    private config() : void {
 
         //use logger middleware
         this.app.use(logger("dev"));
 
-        //use json form parser middlware
+        //use json form parser middleware
         this.app.use(bodyParser.json());
 
-        //use query string parser middlware
+        //use query string parser middleware
         this.app.use(bodyParser.urlencoded({
             extended: true
         }));
@@ -74,7 +76,7 @@ export class HttpServer extends EventEmitter {
         //use cookie parser middleware
         this.app.use(cookieParser("SECRET_GOES_HERE"));
 
-        //use override middlware
+        //use override middleware
         this.app.use(methodOverride());
 
         //catch 404 and forward to error handler
@@ -94,15 +96,12 @@ export class HttpServer extends EventEmitter {
      * @class Server
      * @method api
      */
-    private routes() {
-      
-        let router : express.Router;
-        router = express.Router();
+    private routes() : void {
 
-        IndexRoute.create(router);
+        this.router.use('/v1', new IndexRoute().use());
 
         //use router middleware
-        this.app.use(router);
+        this.app.use(this.router);
 
     }
 

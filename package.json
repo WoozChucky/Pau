@@ -12,8 +12,10 @@
     "background": "forever start ./dist/app.js"
   },
   "dependencies": {
+    "@types/async-lock": "^1.1.0",
     "@types/crypto-js": "^3.1.38",
     "argparse": "^1.0.10",
+    "async-lock": "^1.1.2",
     "body-parser": "~1.18.2",
     "cookie-parser": "~1.4.3",
     "crypto-js": "^3.1.9-1",
@@ -27,6 +29,7 @@
     "method-override": "^2.3.10",
     "mongoose": "^5.0.6",
     "morgan": "~1.9.0",
+    "prex": "^0.3.0",
     "serve-favicon": "~2.4.5",
     "ws": "^4.1.0"
   },
