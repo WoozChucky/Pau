@@ -1,5 +1,0 @@
-#!/bin/bash
-cd /home/ec2-user/express-service
-export HTTP_PORT=80
-export P2P_PORT=6000
-forever start ./dist/app.js

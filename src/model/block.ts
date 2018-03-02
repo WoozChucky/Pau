@@ -1,4 +1,3 @@
-import { Long } from "bson";
 import { Transaction } from "./transaction";
 
 export class Block {

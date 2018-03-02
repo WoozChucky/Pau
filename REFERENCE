@@ -1,0 +1,5 @@
+Example of creating a docker network and making containers running connected to that network
+
+$ docker network create -d bridge --subnet 10.0.0.0/24 my_bridge
+$ docker run -itd --name c2 --net my_bridge busybox sh
+$ docker run -itd --name c3 --net my_bridge --ip 10.0.0.254 busybox sh

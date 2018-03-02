@@ -20,11 +20,11 @@ export class BlockchainManager {
 
         await resourceLock.wait();
 
-        Database.get('CHAIN')
+        Database.get(Database.BLOCKCHAIN_KEY)
             .then((chain : string) => {
-                BlockchainManager.chain  = JSON.parse(chain);
+                BlockchainManager.chain = JSON.parse(chain);
             })
-            .catch(err => {
+            .catch(() => {
                 console.log('Error loading blockchain from local database. Using genesis block.');
 
                 BlockchainManager.chain = getBlockchain();
@@ -110,13 +110,17 @@ export class BlockchainManager {
 
     public static async saveLocally() : Promise<void> {
 
+        if(!BlockchainManager.inited) {
+            throw new Error("BlockchainManager is not initialized.");
+        }
+
         await resourceLock.wait();
 
         let chain = BlockchainManager.chain;
 
         resourceLock.release();
 
-        return Database.put('CHAIN', JSON.stringify(chain))
+        return Database.put(Database.BLOCKCHAIN_KEY, JSON.stringify(chain))
             .then(() => {
                 console.log('Safely written blockchain database!')
             })

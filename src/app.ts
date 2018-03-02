@@ -66,9 +66,6 @@ let p2pPort = parsedArgs["P2P_PORT"];
 let dataFolder = parsedArgs["DATA"];
 let name = parsedArgs["NAME"][0];
 
-//let server = new Server();
-
-//server.listen(httpPort, p2pPort, initialPeers);
 
 //initWallet();
 

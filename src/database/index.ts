@@ -3,6 +3,8 @@ let leveldown = require('leveldown');
 
 export class Database {
 
+    public static BLOCKCHAIN_KEY = "blockchain_key";
+
     private static db : any;
 
     private static initialized : boolean = false;
