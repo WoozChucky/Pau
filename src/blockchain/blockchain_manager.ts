@@ -26,7 +26,7 @@ export class BlockchainManager {
                 BlockchainManager.chain = JSON.parse(chain);
             })
             .catch(() => {
-                logger.info('Error loading blockchain from local database. Using genesis block.');
+                logger.warning('Error loading blockchain from local database. Using genesis block.');
 
                 BlockchainManager.chain = getBlockchain();
             });
@@ -126,7 +126,7 @@ export class BlockchainManager {
                 logger.info('Safely written blockchain database!')
             })
             .catch(err => {
-                logger.error(err);
+                logger.warning(err);
             });
     }
 }

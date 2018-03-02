@@ -50,8 +50,17 @@ export class Application {
         this.httpServer.on('listening', (port) => {
             logger.info("HTTP Server listening on port: " + port);
         });
+        this.httpServer.on('error', (err) => {
+            logger.error(err);
+            process.exit(1);
+        });
+
         this.p2pServer.on('listening', (port) => {
             logger.info("P2P Server listening on port: " + port);
+        });
+        this.p2pServer.on('error', (err) => {
+            logger.error(err);
+            process.exit(1);
         });
         
         this.httpServer.listen();

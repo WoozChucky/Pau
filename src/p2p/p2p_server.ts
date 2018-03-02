@@ -20,8 +20,15 @@ export class P2PServer extends EventEmitter {
 
     public start() : void {
         this.server = new WebSocket.Server({port: this.port});
+
         this.server.on('connection', this.handleConnection.bind(this));
-        this.emit('listening', this.port);
+
+        this.server.on('error', (err : Error) => {
+            this.emit('error', `P2P Port ${this.port} is already in use!`);
+        });
+
+        this.server.on('listening', () => this.emit('listening', this.port));
+
     }
 
     private handleConnection(socket : WebSocket) : void {

@@ -1,12 +1,12 @@
 import * as bodyParser from "body-parser";
 import * as cookieParser from "cookie-parser";
 import * as express from "express";
-import * as logger from "morgan";
+import * as expressLogger from "morgan";
 import errorHandler = require("errorhandler");
 import methodOverride = require("method-override");
-import { initP2PServer, connectToPeers } from './../p2p/p2p_protocol'
 import { IndexRoute } from "./routes";
 import { EventEmitter } from "events";
+import {isPortTaken} from "../utils/http";
 
 /**
  * The server.
@@ -63,7 +63,7 @@ export class HttpServer extends EventEmitter {
     private config() : void {
 
         //use logger middleware
-        this.app.use(logger("dev"));
+        this.app.use(expressLogger("dev"));
 
         //use json form parser middleware
         this.app.use(bodyParser.json());
@@ -105,39 +105,24 @@ export class HttpServer extends EventEmitter {
 
     }
 
-    private onError(error : any) : void {
-        if (error.syscall !== 'listen') {
-            throw error;
-          }
-
-        let bind = typeof this.httpPort === 'string'
-            ? 'Pipe ' + this.httpPort
-            : 'Port ' + this.httpPort;
-
-        // handle specific listen errors with friendly messages
-          switch (error.code) {
-            case 'EACCES':
-              console.error(bind + ' requires elevated privileges');
-              process.exit(1);
-              break;
-            case 'EADDRINUSE':
-              console.error(bind + ' is already in use');
-              process.exit(1);
-              break;
-            default:
-              throw error;
-          }
-    }
-
     public listen() : void {
 
-        this.app.on('error', this.onError.bind(this));
+        let self = this;
 
-        this.app.listen(this.httpPort);
+        isPortTaken(this.httpPort)
+            .then((available) => {
 
-        this.emit('listening', this.httpPort);
+                if(!available) {
+                    self.emit('error', `HTTP Port ${self.httpPort} is already in use.`)
+                } else {
+                    self.app.listen(self.httpPort);
+                    self.emit('listening', self.httpPort);
+                }
 
-        //initP2PServer(p2pPort);
+            })
+            .catch(err => {
+                self.emit('error', err);
+            });
     }
 
   }
