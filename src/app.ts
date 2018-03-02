@@ -1,7 +1,6 @@
-import { HttpServer } from './httpServer/server';
-import { initWallet } from './blockchain/wallet';
 import { Application } from './application';
 import { ArgumentParser } from 'argparse';
+import { logger } from './utils/logging';
 
 let argParser = new ArgumentParser({
     version: '0.0.1',
@@ -34,11 +33,11 @@ argParser.addArgument(
 );
 
 argParser.addArgument(
-    ['--data'],
+    ['--data-folder'],
     {
-        help: "--data dist/data/db",
+        help: "--data-folder dist/data",
         type: 'string',
-        defaultValue: 'dist/data/db',
+        defaultValue: 'dist/data',
         nargs: 1,
         dest: 'DATA',
         metavar: '<DATA>'
@@ -59,14 +58,11 @@ argParser.addArgument(
 
 let parsedArgs = argParser.parseArgs();
 
-console.log(parsedArgs);
+logger.info('Parsed Arguments: ', parsedArgs);
 
 let httpPort = parsedArgs["HTTP_PORT"];
 let p2pPort = parsedArgs["P2P_PORT"];
 let dataFolder = parsedArgs["DATA"];
 let name = parsedArgs["NAME"][0];
-
-
-//initWallet();
 
 new Application(httpPort, p2pPort, name, dataFolder).initialize();

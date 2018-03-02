@@ -2,8 +2,10 @@ import WebSocket = require("ws");
 import {Message} from "../model/messsage";
 import {MessageType} from "../model/message_type";
 import {Blockchain, BlockchainManager} from "../blockchain/blockchain_manager";
+import {EventEmitter} from "events";
+import {logger} from "../utils/logging";
 
-export class P2PServer {
+export class P2PServer extends EventEmitter {
 
     private port : number;
     private sockets : WebSocket[];
@@ -11,6 +13,7 @@ export class P2PServer {
     private server : WebSocket.Server;
 
     constructor(port : number) {
+        super();
         this.port = port;
         this.sockets = [];
     }
@@ -18,6 +21,7 @@ export class P2PServer {
     public start() : void {
         this.server = new WebSocket.Server({port: this.port});
         this.server.on('connection', this.handleConnection.bind(this));
+        this.emit('listening', this.port);
     }
 
     private handleConnection(socket : WebSocket) : void {
@@ -34,11 +38,11 @@ export class P2PServer {
 
                 let message: Message = P2PServer.JSONtoObject<Message>(data);
                 if (message === null) {
-                    console.log('could not parse received JSON message: ' + data);
+                    logger.info('could not parse received JSON message: ' + data);
                     return;
                 }
 
-                console.log('Received message: %s', JSON.stringify(message));
+                logger.info('Received message: %s', JSON.stringify(message));
 
                 switch (message.type) {
                     case MessageType.QUERY_LATEST:
@@ -62,7 +66,7 @@ export class P2PServer {
                     case MessageType.RESPONSE_BLOCKCHAIN:
                         let receivedChain: Blockchain = P2PServer.JSONtoObject<Blockchain>(message.data);
                         if (receivedChain === null) {
-                            console.log('invalid blocks received: %s', JSON.stringify(message.data));
+                            logger.info('invalid blocks received: %s', JSON.stringify(message.data));
                             break;
                         }
                         this.handleBlockchainResponse(receivedChain);
@@ -70,7 +74,7 @@ export class P2PServer {
                 }
 
             } catch (ex) {
-                console.log(ex);
+                logger.error(ex);
             }
         });
     }
@@ -93,7 +97,7 @@ export class P2PServer {
     }
 
     private closeConnection(socket : WebSocket) : void {
-        console.log(`connection failed to peer: ${socket.url}`);
+        logger.info(`connection failed to peer: ${socket.url}`);
         this.sockets.splice(this.sockets.indexOf(socket), 1);
     }
 
@@ -101,7 +105,7 @@ export class P2PServer {
         try {
             return JSON.parse(data);
         } catch (e) {
-            console.log(e);
+            logger.error(e);
             return null;
         }
     }

@@ -2,6 +2,7 @@ import {Block} from "../model/block";
 import {Semaphore} from "prex";
 import {getBlockchain} from "./blockchain";
 import {Database} from "../database";
+import { logger } from '../utils/logging';
 
 export type Blockchain = Block[];
 
@@ -25,7 +26,7 @@ export class BlockchainManager {
                 BlockchainManager.chain = JSON.parse(chain);
             })
             .catch(() => {
-                console.log('Error loading blockchain from local database. Using genesis block.');
+                logger.info('Error loading blockchain from local database. Using genesis block.');
 
                 BlockchainManager.chain = getBlockchain();
             });
@@ -122,10 +123,10 @@ export class BlockchainManager {
 
         return Database.put(Database.BLOCKCHAIN_KEY, JSON.stringify(chain))
             .then(() => {
-                console.log('Safely written blockchain database!')
+                logger.info('Safely written blockchain database!')
             })
             .catch(err => {
-                console.log(err);
+                logger.error(err);
             });
     }
 }

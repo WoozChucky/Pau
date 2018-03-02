@@ -3,7 +3,7 @@ import { FileSystem } from './utils/filesystem';
 import { HttpServer } from './httpServer/server';
 import { BlockchainManager } from "./blockchain/blockchain_manager";
 import { P2PServer } from "./p2p/p2p_server";
-import Signals = NodeJS.Signals;
+import { logger } from './utils/logging';
 
 export class Application {
 
@@ -22,7 +22,9 @@ export class Application {
         this.dataFolder = dataLocation;
 
         FileSystem.createFolderSync(this.dataFolder);
-        Database.initialize(this.dataFolder + '/' + name);
+        FileSystem.createFolderSync(this.dataFolder + '/db');
+        FileSystem.createFolderSync(this.dataFolder + '/logs');
+        Database.initialize(this.dataFolder + '/db/' + name);
 
         BlockchainManager.initialize();
 
@@ -34,7 +36,7 @@ export class Application {
     public initialize() : void {
 
         process.on('SIGINT', () => {
-            console.log('Caught interrupt signal');
+            logger.info('Caught interrupt signal');
 
             BlockchainManager.saveLocally()
                 .then(() => {
@@ -46,7 +48,10 @@ export class Application {
         });
 
         this.httpServer.on('listening', (port) => {
-            console.log("HTTP Server listening on port: " + port);
+            logger.info("HTTP Server listening on port: " + port);
+        });
+        this.p2pServer.on('listening', (port) => {
+            logger.info("P2P Server listening on port: " + port);
         });
         
         this.httpServer.listen();

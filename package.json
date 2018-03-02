@@ -4,7 +4,11 @@
   "private": true,
   "description": "Very basic app that demonstrates the basics of blockchain technology",
   "author": "Nuno Silva <nuno.levezinho@live.com.pt>",
-  "git": "https://github.com/WoozChucky/ZChain-Node",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WoozChucky/ZChain-Node"
+  },
   "scripts": {
     "start": "node ./dist/app.js",
     "dev": "NODE_ENV=development nodemon ./dist/app.js",
@@ -12,10 +16,7 @@
     "background": "forever start ./dist/app.js"
   },
   "dependencies": {
-    "@types/async-lock": "^1.1.0",
-    "@types/crypto-js": "^3.1.38",
     "argparse": "^1.0.10",
-    "async-lock": "^1.1.2",
     "body-parser": "~1.18.2",
     "cookie-parser": "~1.4.3",
     "crypto-js": "^3.1.9-1",
@@ -30,13 +31,14 @@
     "mongoose": "^5.0.6",
     "morgan": "~1.9.0",
     "prex": "^0.3.0",
-    "serve-favicon": "~2.4.5",
+    "winston": "^2.4.0",
     "ws": "^4.1.0"
   },
   "devDependencies": {
     "@types/argparse": "^1.0.33",
     "@types/body-parser": "^1.16.8",
     "@types/cookie-parser": "^1.4.1",
+    "@types/crypto-js": "^3.1.38",
     "@types/errorhandler": "0.0.32",
     "@types/lodash": "^4.14.104",
     "@types/method-override": "0.0.31",
@@ -44,6 +46,7 @@
     "@types/mongoose": "^5.0.2",
     "@types/morgan": "^1.7.35",
     "@types/node": "^9.4.6",
+    "@types/winston": "^2.3.8",
     "@types/ws": "^4.0.1",
     "grunt": "^1.0.2",
     "grunt-contrib-copy": "^1.0.0",

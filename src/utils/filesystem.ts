@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { logger } from './logging';
 
 /** 
  * Util class for IO operations
@@ -13,7 +14,7 @@ export class FileSystem {
      * 
      * @method createFolder
      * @param targetDir {string} The folder structure
-     * @param isRelativeToScript {any} Defaults to working directory, otherwise uses script fodler as starting location  
+     * @param isRelativeToScript {any} Defaults to working directory, otherwise uses script folder as starting location
      */
     public static createFolderSync(targetDir : string, {isRelativeToScript = false} = {}) : void {
         const sep = path.sep;
@@ -24,13 +25,13 @@ export class FileSystem {
           const curDir = path.resolve(baseDir, parentDir, childDir);
           try {
             fs.mkdirSync(curDir);
-            console.log(`Directory ${curDir} created!`);
+            logger.info(`Directory ${curDir} created!`);
           } catch (err) {
             if (err.code !== 'EEXIST') {
               throw err;
             }
-      
-            console.log(`Directory ${curDir} already exists!`);
+
+              logger.debug(`Directory ${curDir} already exists!`);
           }
       
           return curDir;
