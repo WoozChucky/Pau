@@ -29,7 +29,7 @@ export class HttpServer extends EventEmitter {
       super();
       this.httpPort = port;
 
-      //create expressjs application
+      //create express js application
       this.app = express();
 
       this.router = express.Router();

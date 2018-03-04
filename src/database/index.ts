@@ -4,6 +4,7 @@ let leveldown = require('leveldown');
 export class Database {
 
     public static BLOCKCHAIN_KEY = "blockchain_key";
+    public static ADDRESS_LIST_KEY = "";
 
     private static db : any;
 
@@ -26,7 +27,7 @@ export class Database {
 
     }
 
-    public static async get(key : string) : Promise<any> {
+    public static async get(key : string) : Promise<string> {
 
         if(!Database.initialized) {
             throw new Error("Database not initialized");
@@ -35,7 +36,7 @@ export class Database {
         return await Database.db.get(key);
     }
 
-    public static async put(key : string, value : any) : Promise<void> {
+    public static async put(key : string, value : string) : Promise<void> {
 
         if(!Database.initialized) {
             throw new Error("Database not initialized");

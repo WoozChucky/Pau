@@ -3,3 +3,14 @@ Example of creating a docker network and making containers running connected to 
 $ docker network create -d bridge --subnet 10.0.0.0/24 my_bridge
 $ docker run -itd --name c2 --net my_bridge busybox sh
 $ docker run -itd --name c3 --net my_bridge --ip 10.0.0.254 busybox sh
+
+
+Client Discovery Protocol
+1 - Nodes discover their own external address by various methods.
+2 - Nodes receive the callback address of remote nodes that connect to them.
+3 - Nodes makes DNS request to receive IP addresses.
+4 - Nodes can use addresses hard coded into the software.
+5 - Nodes exchange addresses with other nodes.
+6 - Nodes store addresses in a database and read that database on startup.
+7 - Nodes can be provided addresses as command line arguments
+8 - Nodes read addresses from a user provided text file on startup

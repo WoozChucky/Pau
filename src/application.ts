@@ -4,6 +4,7 @@ import { HttpServer } from './httpServer/server';
 import { BlockchainManager } from "./blockchain/blockchain_manager";
 import { P2PServer } from "./p2p/p2p_server";
 import { logger } from './utils/logging';
+import {AddressManager} from "./net/address_manager";
 
 export class Application {
 
@@ -21,6 +22,7 @@ export class Application {
         this.name = name;
         this.dataFolder = dataLocation;
 
+        AddressManager.initialize(true);
         FileSystem.createFolderSync(this.dataFolder);
         FileSystem.createFolderSync(this.dataFolder + '/db');
         FileSystem.createFolderSync(this.dataFolder + '/logs');

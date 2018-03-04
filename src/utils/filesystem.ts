@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as readline from 'readline';
 import { logger } from './logging';
 
 /** 
@@ -38,4 +39,28 @@ export class FileSystem {
         }, initDir);
     }
 
+    public static readFromFile(file: string) : Promise<string[]> {
+        return new Promise<string[]>((resolve, reject) => {
+            try {
+
+                let rs = readline.createInterface({
+                    input : fs.createReadStream(file)
+                });
+
+                let result: string[] = [];
+
+                rs.on('line', (line) => {
+                    result.push(line);
+                });
+
+                rs.on('close', () => {
+                    return resolve(result);
+                });
+
+            } catch (err) {
+                return reject(err);
+            }
+
+        });
+    }
 }
