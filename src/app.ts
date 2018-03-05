@@ -56,13 +56,26 @@ argParser.addArgument(
     }
 );
 
+argParser.addArgument(
+    ['--addresses'],
+    {
+        help: "1 | 0",
+        type: 'int',
+        defaultValue: 0,
+        nargs: 1,
+        dest: 'USE_FILE',
+        metavar: '<USE_FILE>'
+    }
+);
+
 let parsedArgs = argParser.parseArgs();
 
 logger.info('Parsed Arguments: ', parsedArgs);
 
-let httpPort = parsedArgs["HTTP_PORT"];
-let p2pPort = parsedArgs["P2P_PORT"];
+let httpPort = parsedArgs["HTTP_PORT"][0];
+let p2pPort = parsedArgs["P2P_PORT"][0];
 let dataFolder = parsedArgs["DATA"];
 let name = parsedArgs["NAME"][0];
+let use_address = parsedArgs['USE_FILE'] == 1;
 
-new Application(httpPort, p2pPort, name, dataFolder).initialize();
+new Application(httpPort, p2pPort, name, dataFolder, use_address).initialize();

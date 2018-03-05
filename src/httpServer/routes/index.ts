@@ -6,6 +6,8 @@ import { connectToPeers, getSockets } from '../../p2p/p2p_protocol'
 import { generatenextBlockWithTransaction, getAccountBalance, generateRawNextBlock, generateNextBlock, getBlockchain } from "../../blockchain/blockchain";
 import {Database} from "../../database";
 import {BlockRoute} from "./block";
+import {AddressRoute} from "./address";
+import {PeerRoute} from "./peer";
 
 /**
  * / route
@@ -29,12 +31,12 @@ export class IndexRoute extends BaseRoute {
 
         this.router.use('/blocks', new BlockRoute().use());
 
+        this.router.use('/address', new AddressRoute().use());
+
+        this.router.use('/peers', new PeerRoute().use());
+
         this.router.get('/transaction/:id', (req: Request, res: Response, next: NextFunction) => {
             this.getTransaction(req, res, next);
-        });
-
-        this.router.get('/address/:address', (req: Request, res: Response, next: NextFunction) => {
-            this.getAddress(req, res, next);
         });
 
         this.router.get('/unspentTxOuts', (req: Request, res: Response, next: NextFunction) => {
@@ -71,14 +73,6 @@ export class IndexRoute extends BaseRoute {
 
         this.router.get('/transactionPool', (req: Request, res: Response, next: NextFunction) => {
             this.getTransactionPool(req, res, next);
-        });
-
-        this.router.get('/peers', (req: Request, res: Response, next: NextFunction) => {
-            this.getPeers(req, res, next);
-        });
-
-        this.router.post('/addPeer', (req: Request, res: Response, next: NextFunction) => {
-            this.addPeer(req, res, next);
         });
     }
 
@@ -255,37 +249,4 @@ export class IndexRoute extends BaseRoute {
 
     }
 
-    /**
-     * The home page route.
-     *
-     * @class IndexRoute
-     * @method index
-     * @param req {Request} The express Request object.
-     * @param res {Response} The express Response object.
-     * @param next {NextFunction} Execute the next method.
-     */
-    public getPeers(req: Request, res: Response, next: NextFunction) {
-
-      let output = getSockets().map((s : any) => s._socket.remoteAddress + ':' + s._socket.remotePort);
-
-      BaseRoute.json(req, res, 200, output);
-
-    }
-
-    /**
-     * The home page route.
-     *
-     * @class IndexRoute
-     * @method index
-     * @param req {Request} The express Request object.
-     * @param res {Response} The express Response object.
-     * @param next {NextFunction} Execute the next method.
-     */
-    public addPeer(req: Request, res: Response, next: NextFunction) {
-
-      connectToPeers(req.body.peer);
-
-      BaseRoute.json(req, res, 200);
-
-    }
   }

@@ -10,6 +10,8 @@ const resourceLock = new Semaphore(1);
 
 export class BlockchainManager {
 
+    private static SAVE_TIMEOUT : number = 600000; //10 Minutes
+
     private static chain : Blockchain;
 
     private static inited : boolean = false;
@@ -34,6 +36,8 @@ export class BlockchainManager {
         BlockchainManager.inited = true;
 
         resourceLock.release();
+
+        setTimeout(this.saveLocally, this.SAVE_TIMEOUT);
     }
 
     public static async getChain() : Promise<Blockchain> {
@@ -52,7 +56,7 @@ export class BlockchainManager {
 
     }
 
-    public static async getLastestBlock() : Promise<Block> {
+    public static async getLatestBlock() : Promise<Block> {
 
         if(!BlockchainManager.inited) {
             throw new Error("BlockchainManager is not initialized.");
@@ -121,12 +125,12 @@ export class BlockchainManager {
 
         resourceLock.release();
 
-        return Database.put(Database.BLOCKCHAIN_KEY, JSON.stringify(chain))
+        return await Database.put(Database.BLOCKCHAIN_KEY, JSON.stringify(chain))
             .then(() => {
-                logger.info('Safely written blockchain database!')
+                logger.info('Safely written blockchain database.');
             })
             .catch(err => {
-                logger.warning(err);
+                logger.warn('An error occurred while saving blockchain database -> ', err);
             });
     }
 

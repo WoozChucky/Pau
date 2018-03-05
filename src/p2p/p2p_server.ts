@@ -54,7 +54,7 @@ export class P2PServer extends EventEmitter {
                 switch (message.type) {
                     case MessageType.QUERY_LATEST:
 
-                        BlockchainManager.getLastestBlock()
+                        BlockchainManager.getLatestBlock()
                             .then(block => {
                                 this.write(socket, ({'type' : MessageType.RESPONSE_BLOCKCHAIN, 'data': block}));
                             })

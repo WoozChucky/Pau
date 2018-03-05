@@ -4,7 +4,7 @@ let leveldown = require('leveldown');
 export class Database {
 
     public static BLOCKCHAIN_KEY = "blockchain_key";
-    public static ADDRESS_LIST_KEY = "";
+    public static ADDRESS_LIST_KEY = "address_list_key";
 
     private static db : any;
 

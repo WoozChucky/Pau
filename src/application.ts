@@ -16,25 +16,24 @@ export class Application {
     private httpServer : HttpServer;
     private p2pServer : P2PServer;
 
-    constructor(httpPort : number, p2pPort : number, name : string, dataLocation : string) {
+    constructor(httpPort: number, p2pPort: number, name: string, dataLocation: string, use_address: boolean) {
         this.httpPort = httpPort;
         this.p2pPort = p2pPort;
         this.name = name;
         this.dataFolder = dataLocation;
-
-        AddressManager.initialize(true)
-            .then(() => logger.info('AddressManager was initialized successfully.'))
-            .catch((err) => logger.error(err) );
 
         FileSystem.createFolderSync(this.dataFolder);
         FileSystem.createFolderSync(this.dataFolder + '/db');
         FileSystem.createFolderSync(this.dataFolder + '/logs');
         Database.initialize(this.dataFolder + '/db/' + name);
 
+        AddressManager.initialize(use_address)
+            .then(() => logger.info('AddressManager was initialized successfully.'))
+            .catch((err) => logger.error(err) );
+
         BlockchainManager.initialize()
             .then(() => logger.info('BlockchainManager was initialized successfully.'))
             .catch((err) => logger.error(err) );
-
 
         this.httpServer = new HttpServer(httpPort);
         this.p2pServer = new P2PServer(p2pPort);
@@ -42,16 +41,18 @@ export class Application {
 
     public initialize() : void {
 
-        process.on('SIGINT', () => {
-            logger.info('Caught interrupt signal');
+        process.on('SIGINT',() => {
+            logger.warn('Caught interrupt signal');
 
-            BlockchainManager.saveLocally()
+            Promise.all([AddressManager.saveLocally(), BlockchainManager.saveLocally()])
                 .then(() => {
-                    process.exit(0);
+                    process.exit(0)
                 })
-                .catch(() => {
-                    process.exit(1);
+                .catch(err => {
+                    logger.warn('Didn\'t saved data locally: ', err);
+                    process.exit(1)
                 });
+
         });
 
         this.httpServer.on('listening', (port) => {
@@ -72,7 +73,7 @@ export class Application {
         
         this.httpServer.listen();
         this.p2pServer.start();
-            
+
     }
 
 }

@@ -9,7 +9,7 @@ export let logger = new (winston.Logger)
         transports : [
             new (winston.transports.Console)({
                 timestamp: function() {
-                    return new Date().toISOString().replace('T', ' ').substr(0, 19);
+                    return new Date().toISOString().replace('T', ' ').substr(0, 23);
                 },
                 formatter : function (options) {
                     // - Return string will be passed to logger.
