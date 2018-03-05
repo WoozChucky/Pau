@@ -12,7 +12,7 @@ export class AddressManager {
 
     private static inited : boolean = false;
 
-    private static addresses : [Address];
+    private static addresses : Address[] = [];
 
     public static async initialize(useAddressFile : boolean = false) {
 
@@ -27,19 +27,18 @@ export class AddressManager {
             FileSystem.readFromFile(AddressManager.DEFAULT_FILE_LOCATION)
                 .then( (lines : string[]) => {
 
-                    lines.forEach(line => {
+                    lines.forEach(async(line) => {
 
                         let addr = AddressManager.parseAddress(line);
 
                         if(addr) {
-                            AddressManager.add(addr);
+                            await AddressManager.add(addr);
                         }
 
                     });
-
                 })
                 .catch(err => {
-                    logger.warning(err);
+                    logger.warn(err);
                 });
         }
 
@@ -49,7 +48,7 @@ export class AddressManager {
                 AddressManager.addresses = JSON.parse(output);
             })
             .catch(err => {
-                logger.warning(err);
+                logger.warn(err.type, err.message);
             });
 
         AddressManager.inited = true;
@@ -57,9 +56,18 @@ export class AddressManager {
         resourceLock.release();
     }
 
-    public static add(address : Address) : void {
+    public static async add(address : Address) {
 
+        await resourceLock.wait();
 
+        if(AddressManager.addresses.filter(a => a.ip == address.ip && a.port == a.port).length > 0) {
+            logger.info(`Address ${address.toString()} already exists in AddressManager.`);
+            return;
+        }
+
+        AddressManager.addresses.push(address);
+
+        resourceLock.release();
 
     }
 
@@ -72,7 +80,7 @@ export class AddressManager {
         let port = parseInt(arr[1]);
         let ip = arr[0];
 
-        if (Number.isInteger(port) && ip.split('.').length == 3) {
+        if (Number.isInteger(port) && ip.split('.').length == 4) {
 
             return new Address(ip, port);
 

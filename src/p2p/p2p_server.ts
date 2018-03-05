@@ -23,7 +23,7 @@ export class P2PServer extends EventEmitter {
 
         this.server.on('connection', this.handleConnection.bind(this));
 
-        this.server.on('error', (err : Error) => {
+        this.server.on('error', () => {
             this.emit('error', `P2P Port ${this.port} is already in use!`);
         });
 

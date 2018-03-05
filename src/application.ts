@@ -22,13 +22,18 @@ export class Application {
         this.name = name;
         this.dataFolder = dataLocation;
 
-        AddressManager.initialize(true);
+        AddressManager.initialize(true)
+            .then(() => logger.info('AddressManager was initialized successfully.'))
+            .catch((err) => logger.error(err) );
+
         FileSystem.createFolderSync(this.dataFolder);
         FileSystem.createFolderSync(this.dataFolder + '/db');
         FileSystem.createFolderSync(this.dataFolder + '/logs');
         Database.initialize(this.dataFolder + '/db/' + name);
 
-        BlockchainManager.initialize();
+        BlockchainManager.initialize()
+            .then(() => logger.info('BlockchainManager was initialized successfully.'))
+            .catch((err) => logger.error(err) );
 
 
         this.httpServer = new HttpServer(httpPort);
