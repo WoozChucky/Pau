@@ -14,7 +14,6 @@ export class Application {
     private dataFolder : string;
 
     private httpServer : HttpServer;
-    private p2pServer : P2PServer;
 
     constructor(httpPort: number, p2pPort: number, name: string, dataLocation: string, use_address: boolean) {
         this.httpPort = httpPort;
@@ -36,7 +35,6 @@ export class Application {
             .catch((err) => logger.error(err) );
 
         this.httpServer = new HttpServer(httpPort);
-        this.p2pServer = new P2PServer(p2pPort);
     }
 
     public initialize() : void {
@@ -63,16 +61,16 @@ export class Application {
             process.exit(1);
         });
 
-        this.p2pServer.on('listening', (port) => {
+        P2PServer.bus.on('listening', (port) => {
             logger.info("P2P Server listening on port: " + port);
         });
-        this.p2pServer.on('error', (err) => {
+        P2PServer.bus.on('error', (err) => {
             logger.error(err);
             process.exit(1);
         });
         
         this.httpServer.listen();
-        this.p2pServer.start();
+        P2PServer.start(this.p2pPort);
 
     }
 

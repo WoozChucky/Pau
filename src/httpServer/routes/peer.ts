@@ -21,6 +21,10 @@ export class PeerRoute extends BaseRoute {
         this.router.get("/", PeerRoute.getPeers.bind(this));
 
         this.router.post('/', PeerRoute.addPeer.bind(this));
+
+        this.router.post('/ask', PeerRoute.askPeer.bind(this));
+
+        this.router.post('/ask/:peer', PeerRoute.askPeer.bind(this));
     }
 
     public use(): Router {
@@ -38,7 +42,7 @@ export class PeerRoute extends BaseRoute {
      */
     private static getPeers(req: Request, res: Response, next: NextFunction) {
 
-        let peers = getSockets().map((s : any) => s._socket.remoteAddress + ':' + s._socket.remotePort);
+        let peers = P2PServer.getSockets().map((s : any) => s._socket.remoteAddress + ':' + s._socket.remotePort);
 
         BaseRoute.json(req, res, 200, peers);
 
@@ -55,7 +59,25 @@ export class PeerRoute extends BaseRoute {
      */
     private static addPeer(req: Request, res: Response, next: NextFunction) {
 
-        connectToPeers(req.body.peer);
+        P2PServer.connectToPeer(req.body.peer);
+
+        BaseRoute.json(req, res, 200, {});
+    }
+
+    /**
+     * The home page route.
+     *
+     * @class IndexRoute
+     * @method index
+     * @param req {Request} The express Request object.
+     * @param res {Response} The express Response object.
+     * @param next {NextFunction} Execute the next method.
+     */
+    private static askPeer(req: Request, res: Response, next: NextFunction) {
+
+        let peer = req.params.peer || '';
+
+        P2PServer.askPeers(peer);
 
         BaseRoute.json(req, res, 200, {});
     }

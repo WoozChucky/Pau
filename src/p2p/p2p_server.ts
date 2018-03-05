@@ -4,34 +4,63 @@ import {MessageType} from "../model/message_type";
 import {Blockchain, BlockchainManager} from "../blockchain/blockchain_manager";
 import {EventEmitter} from "events";
 import {logger} from "../utils/logging";
+import {Block} from "../model/block";
+import * as _ from 'lodash';
 
-export class P2PServer extends EventEmitter {
+export class P2PServer {
 
-    private port : number;
-    private sockets : WebSocket[];
+    private static port : number;
+    private static sockets : WebSocket[] = [];
 
-    private server : WebSocket.Server;
+    private static server : WebSocket.Server;
 
-    constructor(port : number) {
-        super();
+    public static bus : EventEmitter = new EventEmitter();
+
+
+    public static start(port : number) : void {
         this.port = port;
-        this.sockets = [];
-    }
-
-    public start() : void {
-        this.server = new WebSocket.Server({port: this.port});
+        this.server = new WebSocket.Server({port: port});
 
         this.server.on('connection', this.handleConnection.bind(this));
 
         this.server.on('error', () => {
-            this.emit('error', `P2P Port ${this.port} is already in use!`);
+            this.bus.emit('error', `P2P Port ${this.port} is already in use!`);
         });
 
-        this.server.on('listening', () => this.emit('listening', this.port));
+        this.server.on('listening', () => this.bus.emit('listening', this.port));
 
     }
 
-    private handleConnection(socket : WebSocket) : void {
+    public static connectToPeer(endpoint : any) : void {
+        const ws: WebSocket = new WebSocket(endpoint);
+        ws.on('open', () => {
+            this.handleConnection(ws);
+        });
+        ws.on('error', (err) => {
+            logger.warn('connection failed -> ', err);
+        });
+    }
+
+    public static getSockets() : WebSocket[] {
+        return P2PServer.sockets;
+    }
+
+    public static askPeers(endpoint : string) : void {
+
+        let socket = this.sockets.find(s => s.url == endpoint);
+
+        if(socket != undefined) {
+            this.write(socket, ({'type': MessageType.QUERY_PEERS, 'data' : null }));
+        } else {
+
+            this.sockets.forEach(socket => {
+                this.write(socket, ({'type': MessageType.QUERY_PEERS, 'data' : null }));
+            });
+        }
+
+    }
+
+    private static handleConnection(socket : WebSocket) : void {
         this.sockets.push(socket);
 
         this.initMessageHandler(socket);
@@ -39,7 +68,7 @@ export class P2PServer extends EventEmitter {
         this.queryClientLastBlock(socket);
     }
 
-    private initMessageHandler(socket: WebSocket) {
+    private static initMessageHandler(socket: WebSocket) {
         socket.on('message', (data : string) => {
             try {
 
@@ -56,27 +85,46 @@ export class P2PServer extends EventEmitter {
 
                         BlockchainManager.getLatestBlock()
                             .then(block => {
-                                this.write(socket, ({'type' : MessageType.RESPONSE_BLOCKCHAIN, 'data': block}));
+                                this.write(socket, ({'type' : MessageType.RESPONSE_BLOCKCHAIN, 'data': JSON.stringify([block])}));
                             })
-                            .catch(err => console.log(err));
+                            .catch(err => logger.error(err));
 
                         break;
                     case MessageType.QUERY_ALL:
 
                         BlockchainManager.getChain()
                             .then(chain => {
-                                this.write(socket, ({'type' : MessageType.RESPONSE_BLOCKCHAIN, 'data': chain}));
+                                this.write(socket, ({'type' : MessageType.RESPONSE_BLOCKCHAIN, 'data': JSON.stringify(chain)}));
                             })
-                            .catch(err => console.log(err));
+                            .catch(err => logger.error(err));
 
                         break;
                     case MessageType.RESPONSE_BLOCKCHAIN:
-                        let receivedChain: Blockchain = P2PServer.JSONtoObject<Blockchain>(message.data);
+                        let receivedChain: Blockchain = P2PServer.JSONtoObject<Block[]>(message.data);
                         if (receivedChain === null) {
                             logger.info('invalid blocks received: %s', JSON.stringify(message.data));
                             break;
                         }
                         this.handleBlockchainResponse(receivedChain);
+                        break;
+                    case MessageType.QUERY_PEERS:
+
+                        let sockets : string[] = this.getSockets().map((s : any) => 'ws://' + s._socket.remoteAddress + ':' + s._socket.remotePort);
+
+                        let output = _.pull(sockets, socket.url);
+
+                        this.write(socket, ({'type' : MessageType.RESPONSE_PEERS, 'data': JSON.stringify(output)}));
+                        break;
+                    case MessageType.RESPONSE_PEERS:
+
+                        let receivedPeers : string[] = P2PServer.JSONtoObject<string[]>(message.data);
+
+                        logger.info('Connecting to peers: ', receivedPeers);
+
+                        receivedPeers.forEach(peer => {
+                            this.connectToPeer(peer);
+                        });
+
                         break;
                 }
 
@@ -86,38 +134,55 @@ export class P2PServer extends EventEmitter {
         });
     }
 
-    private initErrorHandler(socket: WebSocket) {
+    private static initErrorHandler(socket: WebSocket) {
         socket.on('close', this.closeConnection.bind(this));
         socket.on('error', this.closeConnection.bind(this));
     }
 
-    private queryClientLastBlock(socket: WebSocket) {
+    private static queryClientLastBlock(socket: WebSocket) {
         this.write(socket, ({'type': MessageType.QUERY_LATEST, 'data': null}));
     }
 
-    private queryClientChain(socket : WebSocket) : void {
+    private static queryClientChain(socket : WebSocket) : void {
         this.write(socket, ({'type': MessageType.QUERY_ALL, 'data': null}));
     }
 
-    private write(socket : WebSocket, message : Message) : void {
+    private static write(socket : WebSocket, message : Message) : void {
         socket.send(JSON.stringify(message));
     }
 
-    private closeConnection(socket : WebSocket) : void {
+    private static closeConnection(socket : WebSocket) : void {
         logger.info(`connection failed to peer: ${socket.url}`);
-        this.sockets.splice(this.sockets.indexOf(socket), 1);
+        this.sockets.splice(this.sockets.indexOf(socket), 1); //TODO: Check if this socket is really removed
     }
 
-    private static JSONtoObject<T>(data : string) : T {
+    public static broadcastBlockchain() : void {
+
+        BlockchainManager.getChain()
+            .then(chain => {
+                this.broadcast(({'type' : MessageType.RESPONSE_BLOCKCHAIN, 'data': JSON.stringify(chain) }));
+            })
+            .catch(err => logger.error(err));
+
+    }
+
+    private static broadcast(message : Message) : void {
+        this.sockets.forEach(socket => {
+           this.write(socket, message);
+        });
+    }
+
+    private static JSONtoObject<T>(data : any) : T {
         try {
             return JSON.parse(data);
         } catch (e) {
-            logger.error(e);
+            logger.error(e.message);
             return null;
         }
     }
 
-    private handleBlockchainResponse(receivedChain: Blockchain) {
+    private static handleBlockchainResponse(receivedChain: Blockchain) {
 
     }
+
 }
