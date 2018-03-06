@@ -11,7 +11,8 @@ import {Block} from "../model/block";
 
 export class P2PServer {
 
-    private static ASK_PEERS_TIMEOUT = 600000; //10 Minutes
+    private static ASK_PEERS_TIMEOUT = 600000;   //10 Minutes
+    private static LOAD_ADDRESSES_TIMER = 10000; //10 Seconds
 
     private static port : number;
     private static sockets : WebSocket[] = [];
@@ -44,11 +45,12 @@ export class P2PServer {
                     })
                     .catch(err => logger.warn(err));
 
-            }, 10000);
+            }, P2PServer.LOAD_ADDRESSES_TIMER);
 
         });
 
         setInterval(P2PServer.askPeers.bind(P2PServer), P2PServer.ASK_PEERS_TIMEOUT);
+        setInterval(P2PServer.askLatestBlockFromPeers, P2PServer.ASK_PEERS_TIMEOUT);
 
     }
 
@@ -92,6 +94,7 @@ export class P2PServer {
         this.initErrorHandler(socket);
         this.queryClientLastBlock(socket);
 
+        //TODO: Analyze how solve this problem about local addresses
         //this.askPeers(socket.url);
 
         //Save peer to local database
@@ -189,17 +192,12 @@ export class P2PServer {
         this.write(socket, ({'type': MessageType.QUERY_LATEST, 'data': null}));
     }
 
-    private static queryClientChain(socket : WebSocket) : void {
-        this.write(socket, ({'type': MessageType.QUERY_ALL, 'data': null}));
-    }
-
     private static write(socket : WebSocket, message : Message) : void {
         socket.send(JSON.stringify(message));
     }
 
     private static closeConnection(code : number, reason : string) : void {
         logger.info(`connection failed to peer. Code ${code} - ${reason}`);
-        //this //TODO: Check if this socket is really removed
     }
 
     private static endAbruptConnection(error : Error) {
@@ -214,6 +212,20 @@ export class P2PServer {
             })
             .catch(err => logger.error(err));
 
+    }
+
+    public static broadcastLatestBlock() {
+
+        BlockchainManager.getLatestBlock()
+            .then(block => {
+                this.broadcast(({'type' : MessageType.RESPONSE_BLOCKCHAIN, 'data': JSON.stringify([block]) }));
+            })
+            .catch(err => logger.error(err));
+
+    }
+
+    private static askLatestBlockFromPeers() {
+        P2PServer.broadcast({'type': MessageType.QUERY_LATEST, 'data': null});
     }
 
     private static broadcast(message : Message) : void {
@@ -268,5 +280,4 @@ export class P2PServer {
             })
             .catch(err => logger.warn('Error retrieving latest block', err));
     }
-
 }
