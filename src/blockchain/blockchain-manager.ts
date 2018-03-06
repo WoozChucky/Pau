@@ -1,9 +1,9 @@
 import {Block} from "../model/block";
 import {Semaphore} from "prex";
-import {Database} from "../database";
+import {Database} from "../database/database-manager";
 import { logger } from '../utils/logging';
 import {Transaction} from "../model/transaction";
-import {P2PServer} from "../p2p/p2p_server";
+import {P2PServer} from "../p2p/p2p-server";
 import {hexToBinary} from "../utils/converter";
 import * as CryptoJS from "crypto-js";
 

@@ -1,11 +1,11 @@
 import WebSocket = require("ws");
 import {Message} from "../model/messsage";
 import {MessageType} from "../model/message_type";
-import {Blockchain, BlockchainManager} from "../blockchain/blockchain_manager";
+import {Blockchain, BlockchainManager} from "../blockchain/blockchain-manager";
 import {EventEmitter} from "events";
 import {logger} from "../utils/logging";
 import * as _ from 'lodash';
-import {AddressManager} from "../net/address_manager";
+import {AddressManager} from "../net/address-manager";
 import {Address} from "../model/address";
 import {Block} from "../model/block";
 
@@ -118,7 +118,7 @@ export class P2PServer {
                 logger.info('Received p2p message:', { peer: socket.url, message : message});
 
                 switch (message.type) {
-                    case MessageType.QUERY_LATEST:
+                    case MessageType.QUERY_LATEST_BLOCK:
 
                         BlockchainManager.getLatestBlock()
                             .then(block => {
@@ -127,7 +127,7 @@ export class P2PServer {
                             .catch(err => logger.error(err));
 
                         break;
-                    case MessageType.QUERY_ALL:
+                    case MessageType.QUERY_ALL_BLOCKS:
 
                         BlockchainManager.getChain()
                             .then(chain => {
@@ -189,7 +189,7 @@ export class P2PServer {
     }
 
     private static queryClientLastBlock(socket: WebSocket) {
-        this.write(socket, ({'type': MessageType.QUERY_LATEST, 'data': null}));
+        this.write(socket, ({'type': MessageType.QUERY_LATEST_BLOCK, 'data': null}));
     }
 
     private static write(socket : WebSocket, message : Message) : void {
@@ -225,7 +225,7 @@ export class P2PServer {
     }
 
     private static askLatestBlockFromPeers() {
-        P2PServer.broadcast({'type': MessageType.QUERY_LATEST, 'data': null});
+        P2PServer.broadcast({'type': MessageType.QUERY_LATEST_BLOCK, 'data': null});
     }
 
     private static broadcast(message : Message) : void {
@@ -266,7 +266,7 @@ export class P2PServer {
                         }
                     } else if (receivedChain.length === 1) {
                         logger.info('We have to query the chain from our peers');
-                        P2PServer.broadcast({'type': MessageType.QUERY_ALL, 'data': null});
+                        P2PServer.broadcast({'type': MessageType.QUERY_ALL_BLOCKS, 'data': null});
                     } else {
                         logger.info('Received blockchain is longer than current blockchain');
                         BlockchainManager.replaceChain(receivedChain)

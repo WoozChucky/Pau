@@ -1,4 +1,4 @@
-import {Database} from "../database";
+import {Database} from "../database/database-manager";
 import {Address} from "../model/address";
 import {Semaphore} from "prex";
 import {logger} from "../utils/logging";

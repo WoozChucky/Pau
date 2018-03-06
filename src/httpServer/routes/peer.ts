@@ -1,6 +1,6 @@
 import {NextFunction, Request, Response, Router} from "express";
-import {BaseRoute} from "./route";
-import {P2PServer} from "../../p2p/p2p_server";
+import {BaseRoute} from "./base-route";
+import {P2PServer} from "../../p2p/p2p-server";
 
 /***
  * / block

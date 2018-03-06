@@ -1,7 +1,7 @@
-import { BaseRoute } from "./route";
+import { BaseRoute } from "./base-route";
 import { NextFunction, Request, Response, Router } from "express";
-import {BlockchainManager} from "../../blockchain/blockchain_manager";
-import {P2PServer} from "../../p2p/p2p_server";
+import {BlockchainManager} from "../../blockchain/blockchain-manager";
+import {P2PServer} from "../../p2p/p2p-server";
 
 /***
  * / block

@@ -1,10 +1,10 @@
-import { Database } from './database';
+import { Database } from './database/database-manager';
 import { FileSystem } from './utils/filesystem';
-import { HttpServer } from './httpServer/server';
-import { BlockchainManager } from "./blockchain/blockchain_manager";
-import { P2PServer } from "./p2p/p2p_server";
+import { HttpServer } from './httpServer/http-server';
+import { BlockchainManager } from "./blockchain/blockchain-manager";
+import { P2PServer } from "./p2p/p2p-server";
 import { logger } from './utils/logging';
-import {AddressManager} from "./net/address_manager";
+import {AddressManager} from "./net/address-manager";
 
 export class Application {
 

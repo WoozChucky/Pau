@@ -1,12 +1,12 @@
 import {NextFunction, Request, Response, Router} from "express";
-import {BaseRoute} from "./route";
-import {BlockchainManager} from "../../blockchain/blockchain_manager";
-import {AddressManager} from "../../net/address_manager";
+import {BaseRoute} from "./base-route";
+import {BlockchainManager} from "../../blockchain/blockchain-manager";
+import {AddressManager} from "../../net/address-manager";
 
 /***
  * / block
  *
- * @class BlockRoute
+ * @class AddressRoute
  */
 export class AddressRoute extends BaseRoute {
 
