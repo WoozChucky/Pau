@@ -4,8 +4,10 @@ import {MessageType} from "../model/message_type";
 import {Blockchain, BlockchainManager} from "../blockchain/blockchain_manager";
 import {EventEmitter} from "events";
 import {logger} from "../utils/logging";
-import {Block} from "../model/block";
 import * as _ from 'lodash';
+import {AddressManager} from "../net/address_manager";
+import {Address} from "../model/address";
+import {Block} from "../model/block";
 
 export class P2PServer {
 
@@ -31,9 +33,17 @@ export class P2PServer {
 
         this.server.on('listening', () => {
             this.bus.emit('listening', this.port);
+
+            AddressManager.getAll()
+                .then((addresses) => {
+                    addresses.map(a => a.endpoint).forEach(addr => {
+                        P2PServer.connectToPeer(addr);
+                    });
+                })
+                .catch(err => logger.warn(err));
         });
 
-        setTimeout(P2PServer.askPeers.bind(P2PServer), P2PServer.ASK_PEERS_TIMEOUT);
+        setInterval(P2PServer.askPeers.bind(P2PServer), P2PServer.ASK_PEERS_TIMEOUT);
 
     }
 
@@ -74,6 +84,15 @@ export class P2PServer {
         this.initMessageHandler(socket);
         this.initErrorHandler(socket);
         this.queryClientLastBlock(socket);
+
+        //this.askPeers(socket.url);
+
+        //Save peer to local database
+        AddressManager.add(new Address(socket.url))
+            .then(() => AddressManager.saveLocally()
+                .then()
+                .catch(err => logger.warn(err)))
+            .catch(err => logger.warn('Could not add new peer to AddressManager.', err));
     }
 
     private static initMessageHandler(socket: WebSocket) {
@@ -108,18 +127,25 @@ export class P2PServer {
 
                         break;
                     case MessageType.RESPONSE_BLOCKCHAIN:
+
                         let receivedChain: Blockchain = P2PServer.JSONtoObject<Blockchain>(message.data);
+
                         if (receivedChain === null) {
                             logger.warn('Invalid blocks received: ', message.data);
                             break;
                         }
+
                         this.handleBlockchainResponse(receivedChain);
+
                         break;
                     case MessageType.QUERY_PEERS:
 
                         let sockets : string[] = this.getSockets().map((s : any) => 'ws://' + s._socket.remoteAddress + ':' + s._socket.remotePort);
+                        sockets.push('ws://127.0.0.1:' + this.port);
 
-                        let output = _.pull(sockets, socket.url);
+                        let output = _.remove(sockets, (obj) => {
+                            return (obj.toLowerCase().includes('::ffff'.toLowerCase()) || obj.toLowerCase().includes(socket.url.toLowerCase()));
+                        });
 
                         this.write(socket, ({'type' : MessageType.RESPONSE_PEERS, 'data': JSON.stringify(output)}));
                         break;
@@ -189,6 +215,41 @@ export class P2PServer {
     }
 
     private static handleBlockchainResponse(receivedChain: Blockchain) {
+
+        if (receivedChain.length === 0) {
+            logger.info('Received block chain size of 0');
+            return;
+        }
+        const latestBlockReceived: Block = receivedChain[receivedChain.length - 1];
+        if (!BlockchainManager.isValidBlockStructure(latestBlockReceived)) {
+            logger.info('Block structure not valid');
+            return;
+        }
+        BlockchainManager.getLatestBlock()
+            .then(latestBlockHeld => {
+
+                if (latestBlockReceived.index > latestBlockHeld.index) {
+                    logger.info('blockchain possibly behind. We got block index: '
+                        + latestBlockHeld.index + ' Peer got block index: ' + latestBlockReceived.index);
+                    if (latestBlockHeld.hash === latestBlockReceived.previousHash) {
+                        if (BlockchainManager.addBlock(latestBlockReceived)) {
+                            P2PServer.broadcast({ 'type': MessageType.RESPONSE_BLOCKCHAIN, 'data': JSON.stringify([latestBlockHeld]) });
+                        }
+                    } else if (receivedChain.length === 1) {
+                        logger.info('We have to query the chain from our peer');
+                        P2PServer.broadcast({'type': MessageType.QUERY_ALL, 'data': null});
+                    } else {
+                        logger.info('Received blockchain is longer than current blockchain');
+                        BlockchainManager.replaceChain(receivedChain)
+                            .then(() => logger.info('Replaced blockchain with received one.'))
+                            .catch((err) => logger.warn('Error replacing blockchain -> ', err));
+                    }
+                } else {
+                    logger.info('Received blockchain is not longer than received blockchain. Do nothing');
+                }
+
+            })
+            .catch(err => logger.warn('Error retrieving latest block', err));
 
     }
 

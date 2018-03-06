@@ -1,18 +1,16 @@
 
 export class Address {
 
-    public port : number;
-    public ip : string;
+    public endpoint : string;
     public found : number;
 
-    constructor(ip : string, port : number) {
-        this.ip = ip;
-        this.port = port;
+    constructor(url : string) {
+        this.endpoint = url;
         this.found = Date.now();
     }
 
     public toString() : string {
-        return `${this.ip}:${this.port}`;
+        return `${this.endpoint}`;
     }
 
 }

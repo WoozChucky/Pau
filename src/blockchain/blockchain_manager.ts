@@ -37,7 +37,7 @@ export class BlockchainManager {
 
         resourceLock.release();
 
-        setTimeout(this.saveLocally, this.SAVE_TIMEOUT);
+        setInterval(this.saveLocally, this.SAVE_TIMEOUT);
     }
 
     public static async getChain() : Promise<Blockchain> {
@@ -134,6 +134,14 @@ export class BlockchainManager {
             });
     }
 
+    public static isValidBlockStructure(block: Block) : boolean {
+        return typeof block.index === 'number'
+            && typeof block.hash === 'string'
+            && typeof block.previousHash === 'string'
+            && typeof block.timestamp === 'number'
+            && typeof block.data === 'object';
+    };
+
     private static getGenesisChain() : Blockchain {
 
         let genesisTransaction : Transaction = {
@@ -151,5 +159,20 @@ export class BlockchainManager {
         );
 
         return [genesisBlock];
+    }
+
+    public static async replaceChain(newChain: Blockchain) {
+
+        if(!BlockchainManager.inited) {
+            throw new Error("BlockchainManager is not initialized.");
+        }
+
+        await resourceLock.wait();
+
+        //TODO: Additional verification logic
+        this.chain = newChain;
+
+        resourceLock.release();
+
     }
 }

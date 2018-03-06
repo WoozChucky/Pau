@@ -55,7 +55,7 @@ export class AddressManager {
                 });
         }
 
-        setTimeout(this.saveLocally, this.SAVE_TIMEOUT);
+        setInterval(this.saveLocally, this.SAVE_TIMEOUT);
 
     }
 
@@ -68,7 +68,7 @@ export class AddressManager {
 
             await resourceLock.wait();
 
-            if(AddressManager.addresses.filter(a => a.ip == address.ip && a.port == a.port).length > 0) {
+            if(AddressManager.addresses.filter(a => a.endpoint == address.endpoint).length > 0) {
                 resourceLock.release();
                 return reject(`Address ${address.toString()} already exists in AddressManager.`);
             }
@@ -82,7 +82,7 @@ export class AddressManager {
         });
     }
 
-    public static async getAll() {
+    public static async getAll() : Promise<Address[]> {
 
         if(!AddressManager.inited) {
             throw new Error("AddressManager is not initialized.");
@@ -129,7 +129,7 @@ export class AddressManager {
         let ip = arr[0];
 
         if (Number.isInteger(port) && ip.split('.').length == 4) {
-            return new Address(ip, port);
+            return new Address(input);
         }
 
         return null;

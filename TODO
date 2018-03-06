@@ -7,7 +7,7 @@ $ docker run -itd --name c3 --net my_bridge --ip 10.0.0.254 busybox sh
 
 Client Discovery Protocol
 1 - Nodes discover their own external address by various methods.
-2 - Nodes receive the callback address of remote nodes that connect to them.
+2 - Nodes receive the callback address of remote nodes that connect to them.    - DONE
 3 - Nodes makes DNS request to receive IP addresses.
 4 - Nodes can use addresses hard coded into the software.
 5 - Nodes exchange addresses with other nodes.                                  - DONE
