@@ -34,13 +34,18 @@ export class P2PServer {
         this.server.on('listening', () => {
             this.bus.emit('listening', this.port);
 
-            AddressManager.getAll()
-                .then((addresses) => {
-                    addresses.map(a => a.endpoint).forEach(addr => {
-                        P2PServer.connectToPeer(addr);
-                    });
-                })
-                .catch(err => logger.warn(err));
+            // Load all address 10 seconds after booting the p2p server
+            setTimeout(() => {
+                AddressManager.getAll()
+                    .then((addresses) => {
+                        addresses.map(a => a.endpoint).forEach(addr => {
+                            P2PServer.connectToPeer(addr);
+                        });
+                    })
+                    .catch(err => logger.warn(err));
+
+            }, 10000);
+
         });
 
         setInterval(P2PServer.askPeers.bind(P2PServer), P2PServer.ASK_PEERS_TIMEOUT);
@@ -48,6 +53,8 @@ export class P2PServer {
     }
 
     public static connectToPeer(endpoint : any) : void {
+        logger.info('Connecting to peer -> ' + endpoint);
+
         const ws: WebSocket = new WebSocket(endpoint);
         ws.on('open', () => {
             this.handleConnection(ws);
@@ -105,7 +112,7 @@ export class P2PServer {
                     return;
                 }
 
-                logger.info('Received p2p message:', message);
+                logger.info('Received p2p message:', { peer: socket.url, message : message});
 
                 switch (message.type) {
                     case MessageType.QUERY_LATEST:
@@ -168,8 +175,14 @@ export class P2PServer {
     }
 
     private static initErrorHandler(socket: WebSocket) {
-        socket.on('close', this.closeConnection.bind(this));
-        socket.on('error', this.closeConnection.bind(this));
+        socket.on('close', (code, reason) => {
+            P2PServer.closeConnection(code, reason);
+            P2PServer.sockets.splice(this.sockets.indexOf(socket), 1);
+        });
+        socket.on('error', (error : Error) => {
+            P2PServer.endAbruptConnection(error);
+            P2PServer.sockets.splice(this.sockets.indexOf(socket), 1);
+        });
     }
 
     private static queryClientLastBlock(socket: WebSocket) {
@@ -184,9 +197,13 @@ export class P2PServer {
         socket.send(JSON.stringify(message));
     }
 
-    private static closeConnection(socket : WebSocket) : void {
-        logger.info(`connection failed to peer: ${socket.url}`);
-        this.sockets.splice(this.sockets.indexOf(socket), 1); //TODO: Check if this socket is really removed
+    private static closeConnection(code : number, reason : string) : void {
+        logger.info(`connection failed to peer. Code ${code} - ${reason}`);
+        //this //TODO: Check if this socket is really removed
+    }
+
+    private static endAbruptConnection(error : Error) {
+        logger.warn(`connection closed abruptly to peer:`, error);
     }
 
     public static broadcastBlockchain() : void {
@@ -217,12 +234,12 @@ export class P2PServer {
     private static handleBlockchainResponse(receivedChain: Blockchain) {
 
         if (receivedChain.length === 0) {
-            logger.info('Received block chain size of 0');
+            logger.warn('Received block chain size of 0');
             return;
         }
         const latestBlockReceived: Block = receivedChain[receivedChain.length - 1];
         if (!BlockchainManager.isValidBlockStructure(latestBlockReceived)) {
-            logger.info('Block structure not valid');
+            logger.info('Block structure is not valid');
             return;
         }
         BlockchainManager.getLatestBlock()
@@ -236,7 +253,7 @@ export class P2PServer {
                             P2PServer.broadcast({ 'type': MessageType.RESPONSE_BLOCKCHAIN, 'data': JSON.stringify([latestBlockHeld]) });
                         }
                     } else if (receivedChain.length === 1) {
-                        logger.info('We have to query the chain from our peer');
+                        logger.info('We have to query the chain from our peers');
                         P2PServer.broadcast({'type': MessageType.QUERY_ALL, 'data': null});
                     } else {
                         logger.info('Received blockchain is longer than current blockchain');
@@ -250,7 +267,6 @@ export class P2PServer {
 
             })
             .catch(err => logger.warn('Error retrieving latest block', err));
-
     }
 
 }

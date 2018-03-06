@@ -1,7 +1,5 @@
 import {NextFunction, Request, Response, Router} from "express";
 import {BaseRoute} from "./route";
-import {AddressManager} from "../../net/address_manager";
-import {connectToPeers, getSockets} from "../../p2p/p2p_protocol";
 import {P2PServer} from "../../p2p/p2p_server";
 
 /***
