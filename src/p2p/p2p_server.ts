@@ -9,6 +9,8 @@ import * as _ from 'lodash';
 
 export class P2PServer {
 
+    private static ASK_PEERS_TIMEOUT = 600000; //10 Minutes
+
     private static port : number;
     private static sockets : WebSocket[] = [];
 
@@ -27,7 +29,11 @@ export class P2PServer {
             this.bus.emit('error', `P2P Port ${this.port} is already in use!`);
         });
 
-        this.server.on('listening', () => this.bus.emit('listening', this.port));
+        this.server.on('listening', () => {
+            this.bus.emit('listening', this.port);
+        });
+
+        setTimeout(P2PServer.askPeers.bind(P2PServer), P2PServer.ASK_PEERS_TIMEOUT);
 
     }
 
@@ -46,6 +52,8 @@ export class P2PServer {
     }
 
     public static askPeers(endpoint : string) : void {
+
+        logger.info('Asking peers from connected sockets.');
 
         let socket = this.sockets.find(s => s.url == endpoint);
 
@@ -74,11 +82,11 @@ export class P2PServer {
 
                 let message: Message = P2PServer.JSONtoObject<Message>(data);
                 if (message === null) {
-                    logger.info('could not parse received JSON message: ' + data);
+                    logger.warn('Could not parse received JSON message: ', data);
                     return;
                 }
 
-                logger.info('Received message: %s', JSON.stringify(message));
+                logger.info('Received p2p message:', message);
 
                 switch (message.type) {
                     case MessageType.QUERY_LATEST:
@@ -100,9 +108,9 @@ export class P2PServer {
 
                         break;
                     case MessageType.RESPONSE_BLOCKCHAIN:
-                        let receivedChain: Blockchain = P2PServer.JSONtoObject<Block[]>(message.data);
+                        let receivedChain: Blockchain = P2PServer.JSONtoObject<Blockchain>(message.data);
                         if (receivedChain === null) {
-                            logger.info('invalid blocks received: %s', JSON.stringify(message.data));
+                            logger.warn('Invalid blocks received: ', message.data);
                             break;
                         }
                         this.handleBlockchainResponse(receivedChain);
@@ -119,9 +127,8 @@ export class P2PServer {
 
                         let receivedPeers : string[] = P2PServer.JSONtoObject<string[]>(message.data);
 
-                        logger.info('Connecting to peers: ', receivedPeers);
-
                         receivedPeers.forEach(peer => {
+                            logger.info('Connecting to peer: ', peer);
                             this.connectToPeer(peer);
                         });
 

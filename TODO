@@ -10,7 +10,10 @@ Client Discovery Protocol
 2 - Nodes receive the callback address of remote nodes that connect to them.
 3 - Nodes makes DNS request to receive IP addresses.
 4 - Nodes can use addresses hard coded into the software.
-5 - Nodes exchange addresses with other nodes.
+5 - Nodes exchange addresses with other nodes.                                  - DONE
 6 - Nodes store addresses in a database and read that database on startup.
 7 - Nodes can be provided addresses as command line arguments
-8 - Nodes read addresses from a user provided text file on startup
+8 - Nodes read addresses from a user provided text file on startup              - DONE
+
+The setTimeouts should have a configuration file to enable/disable them
+
