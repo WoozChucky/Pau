@@ -3,12 +3,21 @@ import {Semaphore} from "prex";
 import {Database} from "../database";
 import { logger } from '../utils/logging';
 import {Transaction} from "../model/transaction";
+import {P2PServer} from "../p2p/p2p_server";
+import {hexToBinary} from "../utils/converter";
+import * as CryptoJS from "crypto-js";
 
 export type Blockchain = Block[];
 
 const resourceLock = new Semaphore(1);
 
 export class BlockchainManager {
+
+    // in seconds
+    private static BLOCK_GENERATION_INTERVAL: number = 5;
+
+    // in blocks
+    private static DIFFICULTY_ADJUSTMENT_INTERVAL: number = 2;
 
     private static SAVE_TIMEOUT : number = 600000; //10 Minutes
 
@@ -100,17 +109,43 @@ export class BlockchainManager {
 
     }
 
-    public static async addBlock(block : Block) : Promise<void> {
+    public static async addBlock(block : Block) : Promise<boolean> {
 
         if(!BlockchainManager.inited) {
             throw new Error("BlockchainManager is not initialized.");
         }
 
-        await resourceLock.wait();
+        let latestBlock = await BlockchainManager.getLatestBlock();
 
-        BlockchainManager.chain.push(block);
+        if (BlockchainManager.isValidNewBlock(block, latestBlock)) {
 
-        resourceLock.release();
+            await resourceLock.wait();
+            BlockchainManager.chain.push(block);
+            resourceLock.release();
+            return true;
+
+        }
+        return false;
+    }
+
+    private static isValidNewBlock(newBlock: Block, previousBlock: Block) {
+        if (!BlockchainManager.isValidBlockStructure(newBlock)) {
+            logger.warn('invalid block structure: %s', JSON.stringify(newBlock));
+            return false;
+        }
+        if (previousBlock.index + 1 !== newBlock.index) {
+            logger.warn('invalid index');
+            return false;
+        } else if (previousBlock.hash !== newBlock.previousHash) {
+            logger.warn('invalid previous hash');
+            return false;
+        } else if (!BlockchainManager.isValidTimestamp(newBlock, previousBlock)) {
+            logger.warn('invalid timestamp');
+            return false;
+        } else if (!BlockchainManager.hasValidHash(newBlock)) {
+            return false;
+        }
+        return true;
     }
 
     public static async saveLocally() : Promise<void> {
@@ -175,4 +210,109 @@ export class BlockchainManager {
         resourceLock.release();
 
     }
+
+    public static async generateNextBlock(blockData : object) : Promise<Block> {
+        return new Promise<Block>(async (resolve) => {
+
+            const previousBlock: Block = await BlockchainManager.getLatestBlock();
+
+            const difficulty: number = await BlockchainManager.getDifficulty();
+
+            const nextIndex: number = previousBlock.index + 1;
+            const nextTimestamp: number = BlockchainManager.getCurrentTimestamp();
+
+            const newBlock: Block = BlockchainManager.findBlock(nextIndex, previousBlock.hash, nextTimestamp, blockData, difficulty);
+
+            let added = await BlockchainManager.addBlock(newBlock);
+
+            if(added) {
+                P2PServer.broadcastLatestBlock();
+                return resolve(newBlock);
+            } else {
+                return resolve(null);
+            }
+
+        });
+    }
+
+    private static findBlock(index: number, previousHash: string, timestamp: number, data: object, difficulty: number) : Block {
+        let nonce = 0;
+        while (true) {
+            const hash: string = BlockchainManager.calculateHash(index, previousHash, timestamp, data, difficulty, nonce);
+            if (BlockchainManager.hashMatchesDifficulty(hash, difficulty)) {
+                return new Block(index, hash, previousHash, timestamp, data, difficulty, nonce);
+            }
+            nonce++;
+        }
+    }
+
+    private static hashMatchesDifficulty(hash: string, difficulty: number): boolean {
+        const hashInBinary: string = hexToBinary(hash);
+        const requiredPrefix: string = '0'.repeat(difficulty);
+        return hashInBinary.startsWith(requiredPrefix);
+    };
+
+    private static calculateHash(index: number, previousHash: string, timestamp: number, data: object,
+                           difficulty: number, nonce: number): string {
+        return CryptoJS.SHA256(index + previousHash + timestamp + data + difficulty + nonce).toString();
+    }
+
+
+    private static async getDifficulty(): Promise<number> {
+
+        const latestBlock: Block = await BlockchainManager.getLatestBlock();
+        const chain : Blockchain = await BlockchainManager.getChain();
+
+        if (latestBlock.index % BlockchainManager.DIFFICULTY_ADJUSTMENT_INTERVAL === 0 && latestBlock.index !== 0) {
+            return BlockchainManager.getAdjustedDifficulty(latestBlock, chain);
+        } else {
+            return latestBlock.difficulty;
+        }
+    };
+
+    private static async getAdjustedDifficulty(latestBlock: Block, otherChain: Block[]) : Promise<number> {
+
+        const chain : Blockchain = await BlockchainManager.getChain();
+
+        const prevAdjustmentBlock: Block = otherChain[chain.length - BlockchainManager.DIFFICULTY_ADJUSTMENT_INTERVAL];
+
+        const timeExpected: number = BlockchainManager.BLOCK_GENERATION_INTERVAL * BlockchainManager.DIFFICULTY_ADJUSTMENT_INTERVAL;
+
+        const timeTaken: number = latestBlock.timestamp - prevAdjustmentBlock.timestamp;
+
+        if (timeTaken < timeExpected / 2) {
+            return prevAdjustmentBlock.difficulty + 1;
+        } else if (timeTaken > timeExpected * 2) {
+            return prevAdjustmentBlock.difficulty - 1;
+        } else {
+            return prevAdjustmentBlock.difficulty;
+        }
+    };
+
+    private static getCurrentTimestamp(): number {
+        return Math.round(new Date().getTime() / 1000);
+    }
+
+    private static isValidTimestamp(newBlock: Block, previousBlock: Block): boolean {
+        return ( previousBlock.timestamp - 60 < newBlock.timestamp )
+            && newBlock.timestamp - 60 < BlockchainManager.getCurrentTimestamp();
+    };
+
+    private static hasValidHash(block: Block): boolean{
+
+        if (!BlockchainManager.hashMatchesBlockContent(block)) {
+            logger.warn('invalid hash, got:' + block.hash);
+            return false;
+        }
+
+        if (!BlockchainManager.hashMatchesDifficulty(block.hash, block.difficulty)) {
+            logger.warn('block difficulty not satisfied. Expected: ' + block.difficulty + 'got: ' + block.hash);
+        }
+        return true;
+    };
+
+    private static hashMatchesBlockContent(block: Block): boolean {
+        const blockHash: string = BlockchainManager.calculateHash(block.index, block.previousHash, block.timestamp, block.data, block.difficulty, block.nonce);
+        return blockHash === block.hash;
+    };
 }

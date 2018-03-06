@@ -1,17 +1,15 @@
-import { Transaction } from "./transaction";
-
 export class Block {
 
     public index : number;
     public timestamp : number;
     public previousHash : string;
-    public data : Transaction[];
+    public data : object;
     public hash : string;
     public difficulty : number;
     public nonce : number;
 
     constructor(index: number, hash: string, previousHash: string,
-        timestamp: number, data: Transaction[], difficulty: number, nonce: number) {
+        timestamp: number, data: object, difficulty: number, nonce: number) {
         this.index = index;
         this.previousHash = previousHash;
         this.timestamp = timestamp;
