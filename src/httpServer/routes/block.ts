@@ -22,6 +22,8 @@ export class BlockRoute extends BaseRoute {
         this.router.get('/:hash', BlockRoute.getBlock.bind(this));
 
         this.router.post('/broadcast', BlockRoute.broadcastBlockchain.bind(this));
+
+        this.router.post('/', BlockRoute.generateBlock.bind(this));
     }
 
     public use(): Router {
@@ -82,6 +84,26 @@ export class BlockRoute extends BaseRoute {
         P2PServer.broadcastBlockchain();
 
         BaseRoute.json(req, res, 200, {});
+    }
+
+    /**
+     * The home page route.
+     *
+     * @class IndexRoute
+     * @method index
+     * @param req {Request} The express Request object.
+     * @param res {Response} The express Response object.
+     * @param next {NextFunction} Execute the next method.
+     */
+    private static generateBlock(req: Request, res: Response, next: NextFunction) {
+
+        BlockchainManager.generateNextBlock(req.body.data)
+            .then((block) => {
+                BaseRoute.json(req, res, 200, block);
+            })
+            .catch(err => {
+                BaseRoute.json(req, res, 500, err);
+            });
     }
 
 }
