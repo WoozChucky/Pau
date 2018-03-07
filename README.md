@@ -32,12 +32,16 @@ local computer. If you haven't, do that first. You can find instructions @ Googl
 2. Install NPM dependencies:
 
         $ npm install
+        
+3. Transpile the source code
 
-3. Start the development node:
+        $ npm run grunt
+
+4. Start the development node:
 
         $ npm start
 
-4. Open http://127.0.0.1:3000/ in a web browser to view your service details.
+5. Open http://127.0.0.1:3000/v1/status in a web browser to view your service details.
 
 What Do I Do Next?
 ------------------
