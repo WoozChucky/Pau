@@ -1,5 +1,5 @@
 {
-  "name": "zchain-node",
+  "name": "pau",
   "version": "0.0.1",
   "private": true,
   "description": "Very basic app that demonstrates the basics of blockchain technology",
@@ -7,13 +7,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/WoozChucky/ZChain-Node"
+    "url": "https://github.com/WoozChucky/Pau"
   },
   "scripts": {
     "start": "node ./dist/app.js",
-    "dev": "NODE_ENV=development nodemon ./dist/app.js",
-    "grunt": "grunt",
-    "background": "forever start ./dist/app.js"
+    "grunt": "grunt"
   },
   "dependencies": {
     "argparse": "^1.0.10",
@@ -28,7 +26,6 @@
     "levelup": "^2.0.2",
     "lodash": "^4.17.5",
     "method-override": "^2.3.10",
-    "mongoose": "^5.0.6",
     "morgan": "~1.9.0",
     "prex": "^0.3.0",
     "winston": "^2.4.0",
@@ -43,7 +40,6 @@
     "@types/lodash": "^4.14.104",
     "@types/method-override": "0.0.31",
     "@types/mongodb": "^3.0.5",
-    "@types/mongoose": "^5.0.2",
     "@types/morgan": "^1.7.35",
     "@types/node": "^9.4.6",
     "@types/winston": "^2.3.8",
