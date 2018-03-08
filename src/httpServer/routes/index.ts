@@ -3,6 +3,7 @@ import { BaseRoute } from "./base-route";
 import {BlockRoute} from "./block";
 import {AddressRoute} from "./address";
 import {PeerRoute} from "./peer";
+import {WalletRoute} from "./wallet";
 
 /**
  * / route
@@ -29,6 +30,8 @@ export class IndexRoute extends BaseRoute {
         this.router.use('/address', new AddressRoute().use());
 
         this.router.use('/peers', new PeerRoute().use());
+
+        this.router.use('/wallet', new WalletRoute().use());
 
         this.router.get('/address', (req: Request, res: Response, next: NextFunction) => {
             this.getAddress(req, res, next);

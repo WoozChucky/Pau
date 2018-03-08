@@ -10,7 +10,7 @@ This sample includes:
 
 * HTTP API
 * P2P Protocol
-* Wallet Concept
+* [Wallet Concept](src/blockchain/wallet/README.md)
 * Nodes Discovery
 * Local Database
 * Cryptography
@@ -55,3 +55,7 @@ I plan to write some real documentation which should provide some help about whe
 In case you REALLY want to help me out in any way or have a problem, contact me at nuno.levezinho@live.com.pt
 
 (When I have time I'll try to actually write a proper README, until then, good luck!)
+
+LICENSE
+------------------
+All code here provided is under MIT license.
