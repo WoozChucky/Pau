@@ -19,4 +19,20 @@ export class Block {
         this.nonce = nonce;
     }
 
+    public static isValidStructure(block: Block) : boolean {
+        return typeof block.index === 'number'
+            && typeof block.hash === 'string'
+            && typeof block.previousHash === 'string'
+            && typeof block.timestamp === 'number'
+            && typeof block.data === 'object';
+    };
+
+    public isValidStructure() : boolean {
+        return typeof this.index === 'number'
+            && typeof this.hash === 'string'
+            && typeof this.previousHash === 'string'
+            && typeof this.timestamp === 'number'
+            && typeof this.data === 'object';
+    }
+
 }

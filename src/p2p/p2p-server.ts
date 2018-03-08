@@ -250,7 +250,7 @@ export class P2PServer {
             return;
         }
         const latestBlockReceived: Block = receivedChain[receivedChain.length - 1];
-        if (!BlockchainManager.isValidBlockStructure(latestBlockReceived)) {
+        if (!latestBlockReceived.isValidStructure()) {
             logger.info('Block structure is not valid');
             return;
         }

@@ -2,7 +2,6 @@ import {Block} from "../model/block";
 import {Semaphore} from "prex";
 import {Database} from "../database/database-manager";
 import { logger } from '../utils/logging';
-import {Transaction} from "../model/transaction";
 import {P2PServer} from "../p2p/p2p-server";
 import {hexToBinary} from "../utils/converter";
 import * as CryptoJS from "crypto-js";
@@ -129,7 +128,7 @@ export class BlockchainManager {
     }
 
     private static isValidNewBlock(newBlock: Block, previousBlock: Block) {
-        if (!BlockchainManager.isValidBlockStructure(newBlock)) {
+        if (!newBlock.isValidStructure()) {
             logger.warn('invalid block structure: %s', JSON.stringify(newBlock));
             return false;
         }
@@ -169,17 +168,9 @@ export class BlockchainManager {
             });
     }
 
-    public static isValidBlockStructure(block: Block) : boolean {
-        return typeof block.index === 'number'
-            && typeof block.hash === 'string'
-            && typeof block.previousHash === 'string'
-            && typeof block.timestamp === 'number'
-            && typeof block.data === 'object';
-    };
-
     private static getGenesisChain() : Blockchain {
 
-        let genesisTransaction : Transaction = {
+        let genesisTransaction : object = {
             'txIns': [{'signature': '', 'txOutId': '', 'txOutIndex': 0}],
             'txOuts': [{
                 'address': '04bfcab8722991ae774db48f934ca79cfb7dd991229153b9f732ba5334aafcd8e7266e47076996b55a14bf9913ee3145ce0cfc1372ada8ada74bd287450313534a',
@@ -307,6 +298,7 @@ export class BlockchainManager {
 
         if (!BlockchainManager.hashMatchesDifficulty(block.hash, block.difficulty)) {
             logger.warn('block difficulty not satisfied. Expected: ' + block.difficulty + 'got: ' + block.hash);
+            return false;
         }
         return true;
     };
