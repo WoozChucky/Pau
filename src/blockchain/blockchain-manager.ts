@@ -128,7 +128,7 @@ export class BlockchainManager {
     }
 
     private static isValidNewBlock(newBlock: Block, previousBlock: Block) {
-        if (!newBlock.isValidStructure()) {
+        if (!Block.isValidStructure(newBlock)) {
             logger.warn('invalid block structure: %s', JSON.stringify(newBlock));
             return false;
         }
@@ -195,7 +195,6 @@ export class BlockchainManager {
 
         await resourceLock.wait();
 
-        //TODO: Additional verification logic
         this.chain = newChain;
 
         resourceLock.release();
@@ -274,7 +273,7 @@ export class BlockchainManager {
         if (timeTaken < timeExpected / 2) {
             return prevAdjustmentBlock.difficulty + 1;
         } else if (timeTaken > timeExpected * 2) {
-            return prevAdjustmentBlock.difficulty - 1;
+            return (prevAdjustmentBlock.difficulty - 1 < 0) ? 0 : prevAdjustmentBlock.difficulty - 1;
         } else {
             return prevAdjustmentBlock.difficulty;
         }

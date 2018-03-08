@@ -4,9 +4,7 @@ import {MessageType} from "../model/message_type";
 import {Blockchain, BlockchainManager} from "../blockchain/blockchain-manager";
 import {EventEmitter} from "events";
 import {logger} from "../utils/logging";
-import * as _ from 'lodash';
 import {AddressManager} from "../net/address-manager";
-import {Address} from "../model/address";
 import {Block} from "../model/block";
 
 export class P2PServer {
@@ -94,15 +92,7 @@ export class P2PServer {
         this.initErrorHandler(socket);
         this.queryClientLastBlock(socket);
 
-        //TODO: Analyze how solve this problem about local addresses
         //this.askPeers(socket.url);
-
-        //Save peer to local database
-        AddressManager.add(new Address(socket.url))
-            .then(() => AddressManager.saveLocally()
-                .then()
-                .catch(err => logger.warn(err)))
-            .catch(err => logger.warn('Could not add new peer to AddressManager.', err));
     }
 
     private static initMessageHandler(socket: WebSocket) {
@@ -133,7 +123,9 @@ export class P2PServer {
                             .then(chain => {
                                 this.write(socket, ({'type' : MessageType.RESPONSE_BLOCKCHAIN, 'data': JSON.stringify(chain)}));
                             })
-                            .catch(err => logger.error(err));
+                            .catch(err => {
+                                logger.error(err)
+                            });
 
                         break;
                     case MessageType.RESPONSE_BLOCKCHAIN:
@@ -153,11 +145,7 @@ export class P2PServer {
                         let sockets : string[] = this.getSockets().map((s : any) => 'ws://' + s._socket.remoteAddress + ':' + s._socket.remotePort);
                         sockets.push('ws://127.0.0.1:' + this.port);
 
-                        let output = _.remove(sockets, (obj) => {
-                            return (obj.toLowerCase().includes('::ffff'.toLowerCase()) || obj.toLowerCase().includes(socket.url.toLowerCase()));
-                        });
-
-                        this.write(socket, ({'type' : MessageType.RESPONSE_PEERS, 'data': JSON.stringify(output)}));
+                        this.write(socket, ({'type' : MessageType.RESPONSE_PEERS, 'data': JSON.stringify(sockets)}));
                         break;
                     case MessageType.RESPONSE_PEERS:
 
@@ -172,7 +160,7 @@ export class P2PServer {
                 }
 
             } catch (ex) {
-                logger.error(ex);
+                logger.error('Error somewhere in P2P - ', ex);
             }
         });
     }
@@ -250,7 +238,7 @@ export class P2PServer {
             return;
         }
         const latestBlockReceived: Block = receivedChain[receivedChain.length - 1];
-        if (!latestBlockReceived.isValidStructure()) {
+        if (!Block.isValidStructure(latestBlockReceived)) {
             logger.info('Block structure is not valid');
             return;
         }
@@ -262,7 +250,8 @@ export class P2PServer {
                         + latestBlockHeld.index + ' Peer got block index: ' + latestBlockReceived.index);
                     if (latestBlockHeld.hash === latestBlockReceived.previousHash) {
                         if (BlockchainManager.addBlock(latestBlockReceived)) {
-                            P2PServer.broadcast({ 'type': MessageType.RESPONSE_BLOCKCHAIN, 'data': JSON.stringify([latestBlockHeld]) });
+                            logger.info('Adding missing block: ', latestBlockReceived);
+                            P2PServer.broadcast({ 'type': MessageType.RESPONSE_BLOCKCHAIN, 'data': JSON.stringify([latestBlockReceived]) });
                         }
                     } else if (receivedChain.length === 1) {
                         logger.info('We have to query the chain from our peers');
@@ -270,7 +259,10 @@ export class P2PServer {
                     } else {
                         logger.info('Received blockchain is longer than current blockchain');
                         BlockchainManager.replaceChain(receivedChain)
-                            .then(() => logger.info('Replaced blockchain with received one.'))
+                            .then(() => {
+                                logger.info('Replaced blockchain with received one.');
+                                //P2PServer.broadcastBlockchain(); // This might not be a good practise
+                            })
                             .catch((err) => logger.warn('Error replacing blockchain -> ', err));
                     }
                 } else {
