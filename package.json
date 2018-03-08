@@ -2,7 +2,7 @@
   "name": "pau",
   "version": "0.0.1",
   "private": true,
-  "description": "Very basic app that demonstrates the basics of blockchain technology",
+  "description": "App that demonstrates the basics of blockchain technology",
   "author": "Nuno Silva <nuno.levezinho@live.com.pt>",
   "license": "MIT",
   "repository": {
@@ -10,7 +10,7 @@
     "url": "https://github.com/WoozChucky/Pau"
   },
   "scripts": {
-    "start": "node ./dist/app.js",
+    "start": "node ./dist/app.js --name Node1",
     "grunt": "grunt"
   },
   "dependencies": {
@@ -40,7 +40,6 @@
     "@types/errorhandler": "0.0.32",
     "@types/lodash": "^4.14.104",
     "@types/method-override": "0.0.31",
-    "@types/mongodb": "^3.0.5",
     "@types/morgan": "^1.7.35",
     "@types/node": "^9.4.6",
     "@types/winston": "^2.3.8",
