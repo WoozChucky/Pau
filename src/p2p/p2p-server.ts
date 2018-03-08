@@ -6,6 +6,7 @@ import {EventEmitter} from "events";
 import {logger} from "../utils/logging";
 import {AddressManager} from "../net/address-manager";
 import {Block} from "../model/block";
+import {Address} from "../model/address";
 
 export class P2PServer {
 
@@ -47,7 +48,7 @@ export class P2PServer {
 
         });
 
-        setInterval(P2PServer.askPeers.bind(P2PServer), P2PServer.ASK_PEERS_TIMEOUT);
+        //setInterval(P2PServer.askPeers.bind(P2PServer), P2PServer.ASK_PEERS_TIMEOUT);
         setInterval(P2PServer.askLatestBlockFromPeers, P2PServer.ASK_PEERS_TIMEOUT);
 
     }
@@ -55,9 +56,30 @@ export class P2PServer {
     public static connectToPeer(endpoint : any) : void {
         logger.info('Connecting to peer -> ' + endpoint);
 
+        let socks = this.getSockets();
+
+        if(socks.find(s => s.url == endpoint) != undefined) {
+            logger.warn('Already connected to ' + endpoint);
+            return;
+        }
+
+        /** TODO
+         * Don't connect to local node
+         * Check connected sockets and stop if already connected
+         */
+
         const ws: WebSocket = new WebSocket(endpoint);
         ws.on('open', () => {
             this.handleConnection(ws);
+
+            AddressManager.add(new Address(endpoint))
+                .then(() => {
+                    AddressManager.saveLocally()
+                        .then(() => {})
+                        .catch(() => {});
+                })
+                .catch(() => {});
+
         });
         ws.on('error', (err) => {
             logger.warn('connection failed -> ', err);
@@ -91,8 +113,6 @@ export class P2PServer {
         this.initMessageHandler(socket);
         this.initErrorHandler(socket);
         this.queryClientLastBlock(socket);
-
-        //this.askPeers(socket.url);
     }
 
     private static initMessageHandler(socket: WebSocket) {
@@ -142,10 +162,17 @@ export class P2PServer {
                         break;
                     case MessageType.QUERY_PEERS:
 
-                        let sockets : string[] = this.getSockets().map((s : any) => 'ws://' + s._socket.remoteAddress + ':' + s._socket.remotePort);
-                        sockets.push('ws://127.0.0.1:' + this.port);
+                        AddressManager.getAll()
+                            .then((addresses) => {
 
-                        this.write(socket, ({'type' : MessageType.RESPONSE_PEERS, 'data': JSON.stringify(sockets)}));
+                                let sockets = addresses.map((addr : Address) => addr.endpoint);
+
+                                this.write(socket, ({'type' : MessageType.RESPONSE_PEERS, 'data': JSON.stringify(sockets)}));
+                            })
+                            .catch(err => {
+                                logger.warn('Could not retrieve addresses: ', err);
+                            });
+
                         break;
                     case MessageType.RESPONSE_PEERS:
 
@@ -185,7 +212,7 @@ export class P2PServer {
     }
 
     private static closeConnection(code : number, reason : string) : void {
-        logger.info(`connection failed to peer. Code ${code} - ${reason}`);
+        logger.info(`connection lost to peer. Code ${code} - ${reason}`);
     }
 
     private static endAbruptConnection(error : Error) {
