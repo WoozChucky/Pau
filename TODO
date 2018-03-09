@@ -12,7 +12,7 @@ Client Discovery Protocol
 4 - Nodes can use addresses hard coded into the software.
 5 - Nodes exchange addresses with other nodes.                                  - DONE
 6 - Nodes store addresses in a database and read that database on startup.      - DONE
-7 - Nodes can be provided addresses as command line arguments
+7 - Nodes can be provided addresses as command line arguments                   - DONE
 8 - Nodes read addresses from a user provided text file on startup              - DONE
 
 The setTimeouts should have a configuration file to enable/disable them
