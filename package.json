@@ -20,7 +20,7 @@
     "crypto-js": "^3.1.9-1",
     "debug": "~2.6.9",
     "elliptic": "^6.5.4",
-    "errorhandler": "^1.5.0",
+    "errorhandler": "^1.5.1",
     "express": "~4.18.1",
     "js-sha3": "^0.7.0",
     "leveldown": "^3.0.0",
