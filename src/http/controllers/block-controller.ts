@@ -1,7 +1,8 @@
 import { BlockchainManager } from "../../blockchain/blockchain-manager";
 import { NextFunction, Request, Response } from "express";
-import sp from 'synchronized-promise'
 import { P2PServer } from "../../p2p/p2p-server";
+import { Get, Route, Tags,  Post, Body, Path } from "tsoa";
+import { Block } from "../../model/block";
 
 /**
  * Gets the entire chain
@@ -11,9 +12,9 @@ import { P2PServer } from "../../p2p/p2p-server";
  * @param res {Response} The express Response object.
  * @param next {NextFunction} Execute the next middleware method.
  */
-const getAll = (req: Request, res: Response, next: NextFunction) => {
+const getAll = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const chain = sp(BlockchainManager.getChain)()
+    const chain = await BlockchainManager.getChain();
     res.json(chain);
   } catch (err: any) {
     res.status(400).json({ message : `${err.message}`});
@@ -28,9 +29,9 @@ const getAll = (req: Request, res: Response, next: NextFunction) => {
  * @param res {Response} The express Response object.
  * @param next {NextFunction} Execute the next middleware method.
  */
-const getOneByHash = (req: Request, res: Response, next: NextFunction) => {
+const getOneByHash = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const block = sp(BlockchainManager.getBlock)(req.params.hash);
+    const block =  await BlockchainManager.getBlock(req.params.hash);
     res.json(block);
   } catch (err: any) {
     res.status(404).json({ message : `${err.message}`});
@@ -45,7 +46,7 @@ const getOneByHash = (req: Request, res: Response, next: NextFunction) => {
  * @param res {Response} The express Response object.
  * @param next {NextFunction} Execute the next middleware method.
  */
-const broadcast = (req: Request, res: Response, next: NextFunction) => {
+const broadcast = async (req: Request, res: Response, next: NextFunction) => {
 
   P2PServer.broadcastBlockchain();
 
@@ -60,11 +61,36 @@ const broadcast = (req: Request, res: Response, next: NextFunction) => {
  * @param res {Response} The express Response object.
  * @param next {NextFunction} Execute the next middleware method.
  */
-const generateBlock = (req: Request, res: Response, next: NextFunction) => {
+const generateBlock = async (req: Request, res: Response, next: NextFunction) => {
 
-  const block = sp(BlockchainManager.generateNextBlock)(req.body.data);
+  const block = await BlockchainManager.generateNextBlock(req.body.data);
 
   res.json(block);
+
+}
+
+@Route('blocks')
+export class Controller {
+
+  @Get("/")
+  public async findAll(): Promise<object> {
+    return {
+      message: "pong",
+    };
+  }
+
+  @Get("/:hash")
+  public async findOne(@Path() hash: string): Promise<Block> {
+    return {
+      timestamp: 0,
+      index: 0,
+      data: {},
+      hash: '',
+      difficulty: 0,
+      nonce: 0,
+      previousHash: ''
+    };
+  }
 
 }
 

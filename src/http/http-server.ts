@@ -1,4 +1,4 @@
-import * as bodyParser from "body-parser";
+import swaggerUi from "swagger-ui-express";
 import express from "express";
 import errorHandler from "errorhandler";
 import { EventEmitter } from "events";
@@ -70,10 +70,22 @@ export class HttpServer extends EventEmitter {
         this.app.use(morganMiddleware);
 
         //use json form parser middleware
-        this.app.use(bodyParser.json());
+        this.app.use(express.json());
 
         //use query string parser middleware
-        this.app.use(bodyParser.urlencoded({ extended: true }));
+        this.app.use(express.urlencoded({ extended: true }));
+
+        this.app.use(express.static("public"));
+
+        this.app.use(
+          "/docs",
+          swaggerUi.serve,
+          swaggerUi.setup(undefined, {
+              swaggerOptions: {
+                  url: "/swagger.json",
+              },
+          })
+        );
 
         //catch 404 and forward to error handler
         this.app.use(function(err: any, req: express.Request, res: express.Response, next: express.NextFunction) {

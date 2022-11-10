@@ -27,8 +27,8 @@ export class P2PServer {
 
         this.server.on('connection', this.handleConnection.bind(this));
 
-        this.server.on('error', () => {
-            this.bus.emit('error', `P2P Port ${this.port} is already in use!`);
+        this.server.on('error', (error: Error) => {
+            this.bus.emit('error', `P2P Port ${this.port} is already in use! ${error.message}`);
         });
 
         this.server.on('listening', () => {
@@ -267,10 +267,7 @@ export class P2PServer {
             return;
         }
         const latestBlockReceived: Block = receivedChain[receivedChain.length - 1];
-        if (!Block.isValidStructure(latestBlockReceived)) {
-            Logger.info('Block structure is not valid');
-            return;
-        }
+
         BlockchainManager.getLatestBlock()
             .then(async (latestBlockHeld: Block) => {
 

@@ -8,7 +8,9 @@
         "outDir": "./dist",
         "strict": true,
         "sourceMap": true,
-        "moduleResolution": "Node"
+        "moduleResolution": "Node",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true
     },
     "include": [
       "src/**/*"

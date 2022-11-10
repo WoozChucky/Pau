@@ -1,10 +1,11 @@
 import { Block } from "../model/block";
 import { AsyncSemaphore } from "@esfx/async";
 import { Database } from "../database/database-manager";
-import { Logger } from '../utils/logging';
+import { Logger } from "../utils/logging";
 import { P2PServer } from "../p2p/p2p-server";
 import { hexToBinary } from "../utils/converter";
 import * as CryptoJS from "crypto-js";
+import { Buffer } from "buffer";
 
 export type Blockchain = Block[];
 
@@ -31,15 +32,14 @@ export class BlockchainManager {
 
         await resourceLock.wait();
 
-        Database.get(Database.BLOCKCHAIN_KEY)
-            .then((chain : string) => {
-                BlockchainManager.chain = JSON.parse(chain);
-            })
-            .catch(() => {
-                Logger.warn('Error loading blockchain from local database. Using genesis block.');
+        try {
+            const chain = await Database.get(Database.BLOCKCHAIN_KEY);
+            BlockchainManager.chain = JSON.parse(chain);
+        } catch (e) {
+            Logger.warn('Error loading blockchain from local database. Using genesis block.');
 
-                BlockchainManager.chain = BlockchainManager.getGenesisChain();
-            });
+            BlockchainManager.chain = BlockchainManager.getGenesisChain();
+        }
 
         BlockchainManager.initialized = true;
 
@@ -127,10 +127,6 @@ export class BlockchainManager {
     }
 
     private static isValidNewBlock(newBlock: Block, previousBlock: Block) {
-        if (!Block.isValidStructure(newBlock)) {
-            Logger.warn('invalid block structure: %s', JSON.stringify(newBlock));
-            return false;
-        }
         if (previousBlock.index + 1 !== newBlock.index) {
             Logger.warn('invalid index');
             return false;
@@ -158,13 +154,9 @@ export class BlockchainManager {
 
         resourceLock.release();
 
-        return await Database.put(Database.BLOCKCHAIN_KEY, JSON.stringify(chain))
-            .then(() => {
-                Logger.info('Safely written blockchain database.');
-            })
-            .catch(err => {
-                Logger.warn('An error occurred while saving blockchain database -> ', err);
-            });
+        await Database.put(Database.BLOCKCHAIN_KEY, JSON.stringify(chain));
+
+        Logger.info('Safely written blockchain database.');
     }
 
     private static getGenesisChain() : Blockchain {
@@ -178,10 +170,15 @@ export class BlockchainManager {
             'id': 'e655f6a5f26dc9b4cac6e46f52336428287759cf81ef5ff10854f69d68f43fa3'
         };
 
-        const genesisBlock : Block = new Block(
-            0, '91a73664bc84c0baa1fc75ea6e4aa6d1d20c5df664c724e3159aefc2e1186627',
-            '', 1465154705, [genesisTransaction], 0, 0
-        );
+        const genesisBlock: Block = {
+            index: 0,
+            timestamp: 1465154705,
+            previousHash: '',
+            data: [genesisTransaction],
+            hash: '91a73664bc84c0baa1fc75ea6e4aa6d1d20c5df664c724e3159aefc2e1186627',
+            difficulty: 0,
+            nonce: 0,
+        }
 
         return [genesisBlock];
     }
@@ -230,7 +227,7 @@ export class BlockchainManager {
             const hash: string = BlockchainManager.calculateHash(index, previousHash, timestamp, data, difficulty, nonce);
             if (BlockchainManager.hashMatchesDifficulty(hash, difficulty)) {
                 iterating = false;
-                return new Block(index, hash, previousHash, timestamp, data, difficulty, nonce);
+                return { index, hash, previousHash, timestamp, data, difficulty, nonce };
             }
             nonce++;
         }

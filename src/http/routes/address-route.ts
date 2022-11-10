@@ -3,5 +3,5 @@ import { AddressController } from "../controllers/address-controller";
 
 export const AddressRouter = express.Router();
 
-AddressRouter.get('/', AddressController.getAll);
-AddressRouter.get('/:address', AddressController.getByAddress);
+AddressRouter.get('/',async (req, res, next) => await AddressController.getAll(req, res, next));
+AddressRouter.get('/:address', async (req, res, next) => await AddressController.getByAddress(req, res, next));

@@ -5,6 +5,6 @@ export const StatusRouter = express.Router();
 
 //TODO: Add endpoint that return own address
 
-StatusRouter.get('/', StatusController.get);
+StatusRouter.get('/', async (req, res, next) => await StatusController.get(req, res, next));
 
 
