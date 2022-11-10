@@ -3,6 +3,10 @@ Welcome to the worst blockchain implementation ever seen
 
 This sample code helps get you started with blockchain technology. Or at least should <.<
 
+Build Status
+-----------
+![Nodejs CI](https://github.com/woozchucky/pau/actions/workflows/node.js.yml/badge.svg)
+
 What's Here
 -----------
 
