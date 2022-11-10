@@ -1,12 +1,15 @@
 import * as bodyParser from "body-parser";
 import express from "express";
 import errorHandler from "errorhandler";
-import { IndexRoute } from "./routes";
+import { IndexRoute, indexRouter } from "./routes";
 import { EventEmitter } from "events";
 import {isPortTaken} from "../utils/http";
 import {Express} from "express";
 import {morganMiddleware} from "./middlewares/morgan-middleware";
 import {Logger} from "../utils/logging";
+import { StatusRouter } from "./routes/status-router";
+import { BlockRoute } from "./routes/block";
+import { BlockRouter } from "./routes/block-route";
 
 /**
  * The server.
@@ -89,10 +92,11 @@ export class HttpServer extends EventEmitter {
      */
     private routes() : void {
 
-        this.router.use('/v1', new IndexRoute().use());
+        this.router.use('/status', StatusRouter);
+        this.router.use('/blocks', BlockRouter);
 
         //use router middleware
-        this.app.use(this.router);
+        this.app.use('/v1', this.router);
 
     }
 

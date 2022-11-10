@@ -56,7 +56,7 @@ export class P2PServer {
     public static connectToPeer(endpoint : any) : void {
         Logger.info('Connecting to peer -> ' + endpoint);
 
-        const socks = this.getSockets();
+        const socks = P2PServer.getSockets();
 
         if(socks.find(s => s.url == endpoint) != undefined) {
             Logger.warn('Already connected to ' + endpoint);
@@ -179,9 +179,9 @@ export class P2PServer {
 
                         const receivedPeers: string[] | null = P2PServer.JSONtoObject<string[]>(message.data);
 
-                        receivedPeers!.forEach(peer => {
+                        receivedPeers?.forEach(peer => {
                             Logger.info('Connecting to peer: ', peer);
-                            this.connectToPeer(peer);
+                            P2PServer.connectToPeer(peer);
                         });
 
                         break;

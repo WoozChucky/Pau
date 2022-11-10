@@ -1,9 +1,23 @@
-import { NextFunction, Request, Response, Router } from "express";
+import express, { NextFunction, Request, Response, Router } from "express";
 import { BaseRoute } from "./base-route";
 import {BlockRoute} from "./block";
 import {AddressRoute} from "./address";
 import {PeerRoute} from "./peer";
 import {WalletRoute} from "./wallet";
+
+export const indexRouter = express.Router();
+
+const blockRouter = express.Router();
+
+blockRouter.get('/', (req, res) => {
+    res.send('Hello from block router');
+});
+
+indexRouter.use('/blocks', blockRouter);
+
+indexRouter.get('/status', (req, res) => {
+    res.send('hello from status');
+});
 
 /**
  * / route
