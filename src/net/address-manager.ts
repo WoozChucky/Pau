@@ -1,12 +1,16 @@
 import {Database} from "../database/database-manager";
 import {Address} from "../model/address";
-import {Semaphore} from "prex";
+import {AsyncSemaphore} from "@esfx/async";
 import {Logger} from "../utils/logging";
 import {FileSystem} from "../utils/filesystem";
 
-const resourceLock = new Semaphore(1);
+const resourceLock = new AsyncSemaphore(1);
 
 export class AddressManager {
+
+    private constructor() {
+        // empty on purpose
+    }
 
     private static SAVE_TIMEOUT = 600000; //10 Minutes
 
@@ -60,26 +64,21 @@ export class AddressManager {
     }
 
     public static async add(address : Address) : Promise<void> {
-        return new Promise<void>(async (resolve, reject) => {
 
-            if(!AddressManager.inited) {
-                return reject("AddressManager is not initialized.");
-            }
+        if(!AddressManager.inited) {
+            throw new Error("AddressManager is not initialized.")
+        }
 
-            await resourceLock.wait();
+        await resourceLock.wait();
 
-            if(AddressManager.addresses.filter(a => a.endpoint == address.endpoint).length > 0) {
-                resourceLock.release();
-                return reject(`Address ${address.toString()} already exists in AddressManager.`);
-            }
-
-            AddressManager.addresses.push(address);
-
+        if(AddressManager.addresses.filter(a => a.endpoint == address.endpoint).length > 0) {
             resourceLock.release();
+            throw new Error(`Address ${address.toString()} already exists in AddressManager.`);
+        }
 
-            return resolve();
+        AddressManager.addresses.push(address);
 
-        });
+        resourceLock.release();
     }
 
     public static async getAll() : Promise<Address[]> {

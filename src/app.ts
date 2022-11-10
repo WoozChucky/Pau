@@ -41,7 +41,7 @@ argParser.add_argument(
     '--data-folder',
     {
         help: "--data-folder dist/data",
-        type: 'string',
+        type: 'str',
         default: 'dist/data',
         nargs: 1,
         dest: 'DATA',
@@ -54,7 +54,7 @@ argParser.add_argument(
     '--name',
     {
         help: "--name node1",
-        type: 'string',
+        type: 'str',
         required: true,
         nargs: 1,
         dest: 'NAME',

@@ -33,7 +33,7 @@ export class Database {
         return (await Database.db.get(key)).toString();
     }
 
-    public static async put(key : string, value : string) : Promise<void> {
+    public static async put(key: string, value: string) : Promise<void> {
         this.checkDatabaseStatus();
 
         return await Database.db.put(key, value);

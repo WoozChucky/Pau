@@ -5,10 +5,5 @@ export const BlockRouter = express.Router();
 
 BlockRouter.get('/', BlockController.getAll);
 BlockRouter.get('/:hash',  BlockController.getOneByHash);
-// BlockRouter.get('/broadcast', );
-// BlockRouter.post('/', );
-
-
-// this.router.post('/broadcast', BlockRoute.broadcastBlockchain.bind(this));
-
-// this.router.post('/', BlockRoute.generateBlock.bind(this));
+BlockRouter.get('/broadcast', BlockController.broadcast);
+BlockRouter.post('/', BlockController.generateBlock);

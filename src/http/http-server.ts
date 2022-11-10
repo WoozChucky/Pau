@@ -1,14 +1,12 @@
 import * as bodyParser from "body-parser";
 import express from "express";
 import errorHandler from "errorhandler";
-import { IndexRoute, indexRouter } from "./routes";
 import { EventEmitter } from "events";
 import {isPortTaken} from "../utils/http";
 import {Express} from "express";
 import {morganMiddleware} from "./middlewares/morgan-middleware";
 import {Logger} from "../utils/logging";
-import { StatusRouter } from "./routes/status-router";
-import { BlockRoute } from "./routes/block";
+import { StatusRouter } from "./routes/status-route";
 import { BlockRouter } from "./routes/block-route";
 
 /**

@@ -1,14 +1,14 @@
-import {Block} from "../model/block";
-import {Semaphore} from "prex";
-import {Database} from "../database/database-manager";
+import { Block } from "../model/block";
+import { AsyncSemaphore } from "@esfx/async";
+import { Database } from "../database/database-manager";
 import { Logger } from '../utils/logging';
-import {P2PServer} from "../p2p/p2p-server";
-import {hexToBinary} from "../utils/converter";
+import { P2PServer } from "../p2p/p2p-server";
+import { hexToBinary } from "../utils/converter";
 import * as CryptoJS from "crypto-js";
 
 export type Blockchain = Block[];
 
-const resourceLock = new Semaphore(1);
+const resourceLock = new AsyncSemaphore(1);
 
 export class BlockchainManager {
 
@@ -83,10 +83,9 @@ export class BlockchainManager {
         }
 
         return block;
-
     }
 
-    public static async getBlock(hash : string) : Promise<Block> {
+    public static async getBlock(hash: string) : Promise<Block> {
 
         if(!BlockchainManager.initialized) {
             throw new Error("BlockchainManager is not initialized.");
@@ -96,7 +95,7 @@ export class BlockchainManager {
 
         const chain = BlockchainManager.chain;
 
-        const block = chain.find(f => f.hash == hash);
+        const block = chain.find(f => f.hash === hash);
 
         resourceLock.release();
 
