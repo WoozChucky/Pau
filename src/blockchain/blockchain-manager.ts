@@ -1,7 +1,7 @@
 import {Block} from "../model/block";
 import {Semaphore} from "prex";
 import {Database} from "../database/database-manager";
-import { logger } from '../utils/logging';
+import { Logger } from '../utils/logging';
 import {P2PServer} from "../p2p/p2p-server";
 import {hexToBinary} from "../utils/converter";
 import * as CryptoJS from "crypto-js";
@@ -13,19 +13,19 @@ const resourceLock = new Semaphore(1);
 export class BlockchainManager {
 
     // in seconds
-    private static BLOCK_GENERATION_INTERVAL: number = 5;
+    private static BLOCK_GENERATION_INTERVAL = 5;
 
     // in blocks
-    private static DIFFICULTY_ADJUSTMENT_INTERVAL: number = 2;
+    private static DIFFICULTY_ADJUSTMENT_INTERVAL = 2;
 
-    private static SAVE_TIMEOUT : number = 600000; //10 Minutes
+    private static SAVE_TIMEOUT = 600000; //10 Minutes
 
     private static chain : Blockchain;
 
-    private static inited : boolean = false;
+    private static initialized = false;
 
     public static async initialize() : Promise<void> {
-        if(BlockchainManager.inited) {
+        if(BlockchainManager.initialized) {
             throw new Error("BlockchainManager is already initialized.");
         }
 
@@ -36,12 +36,12 @@ export class BlockchainManager {
                 BlockchainManager.chain = JSON.parse(chain);
             })
             .catch(() => {
-                logger.warn('Error loading blockchain from local database. Using genesis block.');
+                Logger.warn('Error loading blockchain from local database. Using genesis block.');
 
                 BlockchainManager.chain = BlockchainManager.getGenesisChain();
             });
 
-        BlockchainManager.inited = true;
+        BlockchainManager.initialized = true;
 
         resourceLock.release();
 
@@ -50,13 +50,13 @@ export class BlockchainManager {
 
     public static async getChain() : Promise<Blockchain> {
 
-        if(!BlockchainManager.inited) {
+        if(!BlockchainManager.initialized) {
             throw new Error("BlockchainManager is not initialized.");
         }
 
         await resourceLock.wait();
 
-        let chain = BlockchainManager.chain;
+        const chain = BlockchainManager.chain;
 
         resourceLock.release();
 
@@ -66,15 +66,15 @@ export class BlockchainManager {
 
     public static async getLatestBlock() : Promise<Block> {
 
-        if(!BlockchainManager.inited) {
+        if(!BlockchainManager.initialized) {
             throw new Error("BlockchainManager is not initialized.");
         }
 
         await resourceLock.wait();
 
-        let chain = BlockchainManager.chain;
+        const chain = BlockchainManager.chain;
 
-        let block = chain[chain.length - 1];
+        const block = chain[chain.length - 1];
 
         resourceLock.release();
 
@@ -88,15 +88,15 @@ export class BlockchainManager {
 
     public static async getBlock(hash : string) : Promise<Block> {
 
-        if(!BlockchainManager.inited) {
+        if(!BlockchainManager.initialized) {
             throw new Error("BlockchainManager is not initialized.");
         }
 
         await resourceLock.wait();
 
-        let chain = BlockchainManager.chain;
+        const chain = BlockchainManager.chain;
 
-        let block = chain.find(f => f.hash == hash);
+        const block = chain.find(f => f.hash == hash);
 
         resourceLock.release();
 
@@ -110,11 +110,11 @@ export class BlockchainManager {
 
     public static async addBlock(block : Block) : Promise<boolean> {
 
-        if(!BlockchainManager.inited) {
+        if(!BlockchainManager.initialized) {
             throw new Error("BlockchainManager is not initialized.");
         }
 
-        let latestBlock = await BlockchainManager.getLatestBlock();
+        const latestBlock = await BlockchainManager.getLatestBlock();
 
         if (BlockchainManager.isValidNewBlock(block, latestBlock)) {
 
@@ -129,17 +129,17 @@ export class BlockchainManager {
 
     private static isValidNewBlock(newBlock: Block, previousBlock: Block) {
         if (!Block.isValidStructure(newBlock)) {
-            logger.warn('invalid block structure: %s', JSON.stringify(newBlock));
+            Logger.warn('invalid block structure: %s', JSON.stringify(newBlock));
             return false;
         }
         if (previousBlock.index + 1 !== newBlock.index) {
-            logger.warn('invalid index');
+            Logger.warn('invalid index');
             return false;
         } else if (previousBlock.hash !== newBlock.previousHash) {
-            logger.warn('invalid previous hash');
+            Logger.warn('invalid previous hash');
             return false;
         } else if (!BlockchainManager.isValidTimestamp(newBlock, previousBlock)) {
-            logger.warn('invalid timestamp');
+            Logger.warn('invalid timestamp');
             return false;
         } else if (!BlockchainManager.hasValidHash(newBlock)) {
             return false;
@@ -149,28 +149,28 @@ export class BlockchainManager {
 
     public static async saveLocally() : Promise<void> {
 
-        if(!BlockchainManager.inited) {
+        if(!BlockchainManager.initialized) {
             throw new Error("BlockchainManager is not initialized.");
         }
 
         await resourceLock.wait();
 
-        let chain = BlockchainManager.chain;
+        const chain = BlockchainManager.chain;
 
         resourceLock.release();
 
         return await Database.put(Database.BLOCKCHAIN_KEY, JSON.stringify(chain))
             .then(() => {
-                logger.info('Safely written blockchain database.');
+                Logger.info('Safely written blockchain database.');
             })
             .catch(err => {
-                logger.warn('An error occurred while saving blockchain database -> ', err);
+                Logger.warn('An error occurred while saving blockchain database -> ', err);
             });
     }
 
     private static getGenesisChain() : Blockchain {
 
-        let genesisTransaction : object = {
+        const genesisTransaction : object = {
             'txIns': [{'signature': '', 'txOutId': '', 'txOutIndex': 0}],
             'txOuts': [{
                 'address': '04bfcab8722991ae774db48f934ca79cfb7dd991229153b9f732ba5334aafcd8e7266e47076996b55a14bf9913ee3145ce0cfc1372ada8ada74bd287450313534a',
@@ -179,7 +179,7 @@ export class BlockchainManager {
             'id': 'e655f6a5f26dc9b4cac6e46f52336428287759cf81ef5ff10854f69d68f43fa3'
         };
 
-        let genesisBlock : Block = new Block(
+        const genesisBlock : Block = new Block(
             0, '91a73664bc84c0baa1fc75ea6e4aa6d1d20c5df664c724e3159aefc2e1186627',
             '', 1465154705, [genesisTransaction], 0, 0
         );
@@ -189,7 +189,7 @@ export class BlockchainManager {
 
     public static async replaceChain(newChain: Blockchain) {
 
-        if(!BlockchainManager.inited) {
+        if(!BlockchainManager.initialized) {
             throw new Error("BlockchainManager is not initialized.");
         }
 
@@ -202,34 +202,35 @@ export class BlockchainManager {
     }
 
     public static async generateNextBlock(blockData : object) : Promise<Block> {
-        return new Promise<Block>(async (resolve) => {
 
-            const previousBlock: Block = await BlockchainManager.getLatestBlock();
+        const previousBlock: Block = await BlockchainManager.getLatestBlock();
 
-            const difficulty: number = await BlockchainManager.getDifficulty();
+        const difficulty: number = await BlockchainManager.getDifficulty();
 
-            const nextIndex: number = previousBlock.index + 1;
-            const nextTimestamp: number = BlockchainManager.getCurrentTimestamp();
+        const nextIndex: number = previousBlock.index + 1;
+        const nextTimestamp: number = BlockchainManager.getCurrentTimestamp();
 
-            const newBlock: Block = BlockchainManager.findBlock(nextIndex, previousBlock.hash, nextTimestamp, blockData, difficulty);
+        const newBlock: Block = BlockchainManager.findBlock(nextIndex, previousBlock.hash, nextTimestamp, blockData, difficulty);
 
-            let added = await BlockchainManager.addBlock(newBlock);
+        const added = await BlockchainManager.addBlock(newBlock);
 
-            if(added) {
-                P2PServer.broadcastLatestBlock();
-                return resolve(newBlock);
-            } else {
-                return resolve(null);
-            }
-
-        });
+        if(added) {
+            P2PServer.broadcastLatestBlock();
+            return newBlock;
+        } else {
+            throw new Error('Failed generate block');
+        }
     }
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     private static findBlock(index: number, previousHash: string, timestamp: number, data: object, difficulty: number) : Block {
         let nonce = 0;
-        while (true) {
+        let iterating = true;
+        while (iterating) {
             const hash: string = BlockchainManager.calculateHash(index, previousHash, timestamp, data, difficulty, nonce);
             if (BlockchainManager.hashMatchesDifficulty(hash, difficulty)) {
+                iterating = false;
                 return new Block(index, hash, previousHash, timestamp, data, difficulty, nonce);
             }
             nonce++;
@@ -240,7 +241,7 @@ export class BlockchainManager {
         const hashInBinary: string = hexToBinary(hash);
         const requiredPrefix: string = '0'.repeat(difficulty);
         return hashInBinary.startsWith(requiredPrefix);
-    };
+    }
 
     private static calculateHash(index: number, previousHash: string, timestamp: number, data: object,
                            difficulty: number, nonce: number): string {
@@ -258,7 +259,7 @@ export class BlockchainManager {
         } else {
             return latestBlock.difficulty;
         }
-    };
+    }
 
     private static async getAdjustedDifficulty(latestBlock: Block, otherChain: Block[]) : Promise<number> {
 
@@ -277,7 +278,7 @@ export class BlockchainManager {
         } else {
             return prevAdjustmentBlock.difficulty;
         }
-    };
+    }
 
     private static getCurrentTimestamp(): number {
         return Math.round(new Date().getTime() / 1000);
@@ -286,24 +287,24 @@ export class BlockchainManager {
     private static isValidTimestamp(newBlock: Block, previousBlock: Block): boolean {
         return ( previousBlock.timestamp - 60 < newBlock.timestamp )
             && newBlock.timestamp - 60 < BlockchainManager.getCurrentTimestamp();
-    };
+    }
 
     private static hasValidHash(block: Block): boolean{
 
         if (!BlockchainManager.hashMatchesBlockContent(block)) {
-            logger.warn('invalid hash, got:' + block.hash);
+            Logger.warn('invalid hash, got:' + block.hash);
             return false;
         }
 
         if (!BlockchainManager.hashMatchesDifficulty(block.hash, block.difficulty)) {
-            logger.warn('block difficulty not satisfied. Expected: ' + block.difficulty + 'got: ' + block.hash);
+            Logger.warn('block difficulty not satisfied. Expected: ' + block.difficulty + 'got: ' + block.hash);
             return false;
         }
         return true;
-    };
+    }
 
     private static hashMatchesBlockContent(block: Block): boolean {
         const blockHash: string = BlockchainManager.calculateHash(block.index, block.previousHash, block.timestamp, block.data, block.difficulty, block.nonce);
         return blockHash === block.hash;
-    };
+    }
 }

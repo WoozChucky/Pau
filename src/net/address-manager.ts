@@ -1,7 +1,7 @@
 import {Database} from "../database/database-manager";
 import {Address} from "../model/address";
 import {Semaphore} from "prex";
-import {logger} from "../utils/logging";
+import {Logger} from "../utils/logging";
 import {FileSystem} from "../utils/filesystem";
 
 const resourceLock = new Semaphore(1);
@@ -12,11 +12,11 @@ export class AddressManager {
 
     private static DEFAULT_FILE_LOCATION = 'addr.txt';
 
-    private static inited : boolean = false;
+    private static inited = false;
 
     private static addresses : Address[] = [];
 
-    public static async initialize(useAddressFile : boolean = false) {
+    public static async initialize(useAddressFile = false) {
 
         if(AddressManager.inited) {
             throw new Error("AddressManager is already initialized.")
@@ -31,18 +31,18 @@ export class AddressManager {
 
                     lines.forEach((line) => {
 
-                        let addr = AddressManager.parseAddress(line);
+                        const addr = AddressManager.parseAddress(line);
 
                         if(addr) {
                             AddressManager.add(addr)
-                                .then(() => logger.info('Added address -> ', addr))
-                                .catch(err => logger.warn(err));
+                                .then(() => Logger.info('Added address -> ', addr))
+                                .catch(err => Logger.warn(err));
                         }
 
                     });
                 })
                 .catch(err => {
-                    logger.warn(err);
+                    Logger.warn(err);
                 });
         } else {
 
@@ -51,7 +51,7 @@ export class AddressManager {
                     AddressManager.addresses = JSON.parse(output);
                 })
                 .catch(err => {
-                    logger.warn(err.type, err.message);
+                    Logger.warn(err.type, err.message);
                 });
         }
 
@@ -90,7 +90,7 @@ export class AddressManager {
 
         await resourceLock.wait();
 
-        let addresses = AddressManager.addresses;
+        const addresses = AddressManager.addresses;
 
         resourceLock.release();
 
@@ -106,27 +106,27 @@ export class AddressManager {
 
         await resourceLock.wait();
 
-        let addressList = AddressManager.addresses;
+        const addressList = AddressManager.addresses;
 
         resourceLock.release();
 
         return await Database.put(Database.ADDRESS_LIST_KEY, JSON.stringify(addressList))
             .then(() => {
-                logger.info('Safely written address database.')
+                Logger.info('Safely written address database.')
             })
             .catch(err => {
-                logger.warning('An error occurred while saving addresses database -> ', err);
+                Logger.warning('An error occurred while saving addresses database -> ', err);
             });
     }
 
-    private static parseAddress(input : string ) : Address {
+    private static parseAddress(input : string ) : Address | null {
 
-        let arr = input.split(':');
+        const arr = input.split(':');
 
         if(arr.length != 2) return null;
 
-        let port = parseInt(arr[1]);
-        let ip = arr[0];
+        const port = parseInt(arr[1]);
+        const ip = arr[0];
 
         if (Number.isInteger(port) && ip.split('.').length == 4) {
             return new Address(input);

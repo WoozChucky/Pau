@@ -1,23 +1,23 @@
 import * as bodyParser from "body-parser";
-import * as cookieParser from "cookie-parser";
-import * as express from "express";
-import * as expressLogger from "morgan";
-import errorHandler = require("errorhandler");
-import methodOverride = require("method-override");
+import express from "express";
+import errorHandler from "errorhandler";
 import { IndexRoute } from "./routes";
 import { EventEmitter } from "events";
 import {isPortTaken} from "../utils/http";
+import {Express} from "express";
+import {morganMiddleware} from "./middlewares/morgan-middleware";
+import {Logger} from "../utils/logging";
 
 /**
  * The server.
  *
- * @class Server
+ * @class HttpServer
  */
 export class HttpServer extends EventEmitter {
 
-    private app: express.Application;
-    private router : express.Router;
-    private httpPort : any;
+    private app: Express;
+    private readonly router : express.Router;
+    private httpPort : number;
   
     /**
      * Constructor.
@@ -51,7 +51,7 @@ export class HttpServer extends EventEmitter {
      * @method api
      */
     private api() : void {
-
+        Logger.info('TODO: Create Rest API calls, or remote method')
     }
   
     /**
@@ -63,21 +63,13 @@ export class HttpServer extends EventEmitter {
     private config() : void {
 
         //use logger middleware
-        this.app.use(expressLogger("dev"));
+        this.app.use(morganMiddleware);
 
         //use json form parser middleware
         this.app.use(bodyParser.json());
 
         //use query string parser middleware
-        this.app.use(bodyParser.urlencoded({
-            extended: true
-        }));
-
-        //use cookie parser middleware
-        this.app.use(cookieParser("SECRET_GOES_HERE"));
-
-        //use override middleware
-        this.app.use(methodOverride());
+        this.app.use(bodyParser.urlencoded({ extended: true }));
 
         //catch 404 and forward to error handler
         this.app.use(function(err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -87,7 +79,6 @@ export class HttpServer extends EventEmitter {
 
         //error handling
         this.app.use(errorHandler());
-
     }
   
     /**
@@ -105,24 +96,19 @@ export class HttpServer extends EventEmitter {
 
     }
 
-    public listen() : void {
+    public async listen() : Promise<void> {
+        try {
+            const portTaken = await isPortTaken(this.httpPort);
 
-        let self = this;
-
-        isPortTaken(this.httpPort)
-            .then((available) => {
-
-                if(!available) {
-                    self.emit('error', `HTTP Port ${self.httpPort} is already in use.`)
-                } else {
-                    self.app.listen(self.httpPort);
-                    self.emit('listening', self.httpPort);
-                }
-
-            })
-            .catch(err => {
-                self.emit('error', err);
-            });
+            if(!portTaken) {
+                this.emit('error', `HTTP Port ${this.httpPort} is already in use.`)
+            } else {
+                this.app.listen(this.httpPort);
+                this.emit('listening', this.httpPort);
+            }
+        } catch (err) {
+            this.emit('error', err);
+        }
     }
 
   }

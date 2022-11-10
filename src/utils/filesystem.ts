@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
-import { logger } from './logging';
+import { Logger } from './logging';
 
 /** 
  * Util class for IO operations
@@ -26,13 +26,13 @@ export class FileSystem {
           const curDir = path.resolve(baseDir, parentDir, childDir);
           try {
             fs.mkdirSync(curDir);
-            logger.info(`Directory ${curDir} created!`);
-          } catch (err) {
+            Logger.info(`Directory ${curDir} created!`);
+          } catch (err: any) {
             if (err.code !== 'EEXIST') {
               throw err;
             }
 
-              logger.debug(`Directory ${curDir} already exists!`);
+              Logger.debug(`Directory ${curDir} already exists!`);
           }
       
           return curDir;
@@ -43,11 +43,11 @@ export class FileSystem {
         return new Promise<string[]>((resolve, reject) => {
             try {
 
-                let rs = readline.createInterface({
+                const rs = readline.createInterface({
                     input : fs.createReadStream(file)
                 });
 
-                let result: string[] = [];
+                const result: string[] = [];
 
                 rs.on('line', (line) => {
                     result.push(line);

@@ -1,9 +1,9 @@
-import WebSocket = require("ws");
+import { WebSocket, Server } from "ws";
 import {Message} from "../model/messsage";
 import {MessageType} from "../model/message_type";
 import {Blockchain, BlockchainManager} from "../blockchain/blockchain-manager";
 import {EventEmitter} from "events";
-import {logger} from "../utils/logging";
+import {Logger} from "../utils/logging";
 import {AddressManager} from "../net/address-manager";
 import {Block} from "../model/block";
 import {Address} from "../model/address";
@@ -16,7 +16,7 @@ export class P2PServer {
     private static port : number;
     private static sockets : WebSocket[] = [];
 
-    private static server : WebSocket.Server;
+    private static server : Server;
 
     public static bus : EventEmitter = new EventEmitter();
 
@@ -42,7 +42,7 @@ export class P2PServer {
                             P2PServer.connectToPeer(addr);
                         });
                     })
-                    .catch(err => logger.warn(err));
+                    .catch(err => Logger.warn(err));
 
             }, P2PServer.LOAD_ADDRESSES_TIMER);
 
@@ -54,12 +54,12 @@ export class P2PServer {
     }
 
     public static connectToPeer(endpoint : any) : void {
-        logger.info('Connecting to peer -> ' + endpoint);
+        Logger.info('Connecting to peer -> ' + endpoint);
 
-        let socks = this.getSockets();
+        const socks = this.getSockets();
 
         if(socks.find(s => s.url == endpoint) != undefined) {
-            logger.warn('Already connected to ' + endpoint);
+            Logger.warn('Already connected to ' + endpoint);
             return;
         }
 
@@ -73,16 +73,16 @@ export class P2PServer {
             this.handleConnection(ws);
 
             AddressManager.add(new Address(endpoint))
-                .then(() => {
-                    AddressManager.saveLocally()
-                        .then(() => {})
-                        .catch(() => {});
+                .then(async () => {
+                    await AddressManager.saveLocally();
                 })
-                .catch(() => {});
+                .catch((err: Error) => {
+                    Logger.warn(err);
+                });
 
         });
         ws.on('error', (err) => {
-            logger.warn('connection failed -> ', err);
+            Logger.warn('connection failed -> ', err);
         });
     }
 
@@ -92,9 +92,9 @@ export class P2PServer {
 
     public static askPeers(endpoint : string) : void {
 
-        logger.info('Asking peers from connected sockets.');
+        Logger.info('Asking peers from connected sockets.');
 
-        let socket = this.sockets.find(s => s.url == endpoint);
+        const socket = this.sockets.find(s => s.url == endpoint);
 
         if(socket != undefined) {
             this.write(socket, ({'type': MessageType.QUERY_PEERS, 'data' : null }));
@@ -119,13 +119,13 @@ export class P2PServer {
         socket.on('message', (data : string) => {
             try {
 
-                let message: Message = P2PServer.JSONtoObject<Message>(data);
+                const message: Message | null = P2PServer.JSONtoObject<Message>(data);
                 if (message === null) {
-                    logger.warn('Could not parse received JSON message: ', data);
+                    Logger.warn('Could not parse received JSON message: ', data);
                     return;
                 }
 
-                logger.info('Received p2p message:', { peer: socket.url, message : message});
+                Logger.info('Received p2p message:', { peer: socket.url, message : message});
 
                 switch (message.type) {
                     case MessageType.QUERY_LATEST_BLOCK:
@@ -134,7 +134,7 @@ export class P2PServer {
                             .then(block => {
                                 this.write(socket, ({'type' : MessageType.RESPONSE_BLOCKCHAIN, 'data': JSON.stringify([block])}));
                             })
-                            .catch(err => logger.error(err));
+                            .catch(err => Logger.error(err));
 
                         break;
                     case MessageType.QUERY_ALL_BLOCKS:
@@ -144,57 +144,59 @@ export class P2PServer {
                                 this.write(socket, ({'type' : MessageType.RESPONSE_BLOCKCHAIN, 'data': JSON.stringify(chain)}));
                             })
                             .catch(err => {
-                                logger.error(err)
+                                Logger.error(err)
                             });
 
                         break;
-                    case MessageType.RESPONSE_BLOCKCHAIN:
+                    case MessageType.RESPONSE_BLOCKCHAIN: {
 
-                        let receivedChain: Blockchain = P2PServer.JSONtoObject<Blockchain>(message.data);
+                        const receivedChain = P2PServer.JSONtoObject<Blockchain>(message.data);
 
                         if (receivedChain === null) {
-                            logger.warn('Invalid blocks received: ', message.data);
+                            Logger.warn('Invalid blocks received: ', message.data);
                             break;
                         }
 
                         this.handleBlockchainResponse(receivedChain);
 
                         break;
+                    }
                     case MessageType.QUERY_PEERS:
 
                         AddressManager.getAll()
                             .then((addresses) => {
 
-                                let sockets = addresses.map((addr : Address) => addr.endpoint);
+                                const sockets = addresses.map((addr : Address) => addr.endpoint);
 
                                 this.write(socket, ({'type' : MessageType.RESPONSE_PEERS, 'data': JSON.stringify(sockets)}));
                             })
                             .catch(err => {
-                                logger.warn('Could not retrieve addresses: ', err);
+                                Logger.warn('Could not retrieve addresses: ', err);
                             });
 
                         break;
-                    case MessageType.RESPONSE_PEERS:
+                    case MessageType.RESPONSE_PEERS: {
 
-                        let receivedPeers : string[] = P2PServer.JSONtoObject<string[]>(message.data);
+                        const receivedPeers: string[] | null = P2PServer.JSONtoObject<string[]>(message.data);
 
-                        receivedPeers.forEach(peer => {
-                            logger.info('Connecting to peer: ', peer);
+                        receivedPeers!.forEach(peer => {
+                            Logger.info('Connecting to peer: ', peer);
                             this.connectToPeer(peer);
                         });
 
                         break;
+                    }
                 }
 
             } catch (ex) {
-                logger.error('Error somewhere in P2P - ', ex);
+                Logger.error('Error somewhere in P2P - ', ex);
             }
         });
     }
 
     private static initErrorHandler(socket: WebSocket) {
-        socket.on('close', (code, reason) => {
-            P2PServer.closeConnection(code, reason);
+        socket.on('close', (code: number, reason: Buffer) => {
+            P2PServer.closeConnection(code, reason.toString());
             P2PServer.sockets.splice(this.sockets.indexOf(socket), 1);
         });
         socket.on('error', (error : Error) => {
@@ -212,11 +214,11 @@ export class P2PServer {
     }
 
     private static closeConnection(code : number, reason : string) : void {
-        logger.info(`connection lost to peer. Code ${code} - ${reason}`);
+        Logger.info(`connection lost to peer. Code ${code} - ${reason}`);
     }
 
     private static endAbruptConnection(error : Error) {
-        logger.warn(`connection closed abruptly to peer:`, error);
+        Logger.warn(`connection closed abruptly to peer:`, error);
     }
 
     public static broadcastBlockchain() : void {
@@ -225,7 +227,7 @@ export class P2PServer {
             .then(chain => {
                 this.broadcast(({'type' : MessageType.RESPONSE_BLOCKCHAIN, 'data': JSON.stringify(chain) }));
             })
-            .catch(err => logger.error(err));
+            .catch(err => Logger.error(err));
 
     }
 
@@ -235,7 +237,7 @@ export class P2PServer {
             .then(block => {
                 this.broadcast(({'type' : MessageType.RESPONSE_BLOCKCHAIN, 'data': JSON.stringify([block]) }));
             })
-            .catch(err => logger.error(err));
+            .catch(err => Logger.error(err));
 
     }
 
@@ -249,11 +251,11 @@ export class P2PServer {
         });
     }
 
-    private static JSONtoObject<T>(data : any) : T {
+    private static JSONtoObject<T>(data : any) : T | null {
         try {
             return JSON.parse(data);
-        } catch (e) {
-            logger.error(e.message);
+        } catch (err: any) {
+            Logger.error(err.message);
             return null;
         }
     }
@@ -261,42 +263,43 @@ export class P2PServer {
     private static handleBlockchainResponse(receivedChain: Blockchain) {
 
         if (receivedChain.length === 0) {
-            logger.warn('Received block chain size of 0');
+            Logger.warn('Received block chain size of 0');
             return;
         }
         const latestBlockReceived: Block = receivedChain[receivedChain.length - 1];
         if (!Block.isValidStructure(latestBlockReceived)) {
-            logger.info('Block structure is not valid');
+            Logger.info('Block structure is not valid');
             return;
         }
         BlockchainManager.getLatestBlock()
-            .then(latestBlockHeld => {
+            .then(async (latestBlockHeld: Block) => {
 
                 if (latestBlockReceived.index > latestBlockHeld.index) {
-                    logger.info('blockchain possibly behind. We got block index: '
+                    Logger.info('blockchain possibly behind. We got block index: '
                         + latestBlockHeld.index + ' Peer got block index: ' + latestBlockReceived.index);
                     if (latestBlockHeld.hash === latestBlockReceived.previousHash) {
-                        if (BlockchainManager.addBlock(latestBlockReceived)) {
-                            logger.info('Adding missing block: ', latestBlockReceived);
+                        const addedBlock = await BlockchainManager.addBlock(latestBlockReceived);
+                        if (addedBlock) {
+                            Logger.info('Adding missing block: ', latestBlockReceived);
                             P2PServer.broadcast({ 'type': MessageType.RESPONSE_BLOCKCHAIN, 'data': JSON.stringify([latestBlockReceived]) });
                         }
                     } else if (receivedChain.length === 1) {
-                        logger.info('We have to query the chain from our peers');
+                        Logger.info('We have to query the chain from our peers');
                         P2PServer.broadcast({'type': MessageType.QUERY_ALL_BLOCKS, 'data': null});
                     } else {
-                        logger.info('Received blockchain is longer than current blockchain');
+                        Logger.info('Received blockchain is longer than current blockchain');
                         BlockchainManager.replaceChain(receivedChain)
                             .then(() => {
-                                logger.info('Replaced blockchain with received one.');
+                                Logger.info('Replaced blockchain with received one.');
                                 //P2PServer.broadcastBlockchain(); // This might not be a good practise
                             })
-                            .catch((err) => logger.warn('Error replacing blockchain -> ', err));
+                            .catch((err) => Logger.warn('Error replacing blockchain -> ', err));
                     }
                 } else {
-                    logger.info('Received blockchain is not longer than received blockchain. Do nothing');
+                    Logger.info('Received blockchain is not longer than received blockchain. Do nothing');
                 }
 
             })
-            .catch(err => logger.warn('Error retrieving latest block', err));
+            .catch(err => Logger.warn('Error retrieving latest block', err));
     }
 }

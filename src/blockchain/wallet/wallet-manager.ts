@@ -1,6 +1,6 @@
 import { ec } from "elliptic";
 import { sha3_256 } from "js-sha3";
-import {logger} from "../../utils/logging";
+import {Logger} from "../../utils/logging";
 
 /***
  * / wallet
@@ -20,15 +20,15 @@ export class WalletManager {
      */
     public static generateNewWallet() : object  {
 
-        let privateKey = this.generatePrivateKey();
-        let publicAddress = this.getPublicAddress(privateKey);
+        const privateKey = this.generatePrivateKey();
+        const publicAddress = this.getPublicAddress(privateKey);
 
-        let wallet = {
+        const wallet = {
             address : publicAddress,
             key : privateKey
         };
 
-        logger.info('Generated new wallet with info -> ', wallet);
+        Logger.info('Generated new wallet with info -> ', wallet);
 
         return wallet;
     }
@@ -42,25 +42,25 @@ export class WalletManager {
      */
     public static getPublicAddress(privateKey : string) : string {
 
-        let key = WalletManager.EC.keyFromPrivate(privateKey, 'hex');
+        const key = WalletManager.EC.keyFromPrivate(privateKey, 'hex');
 
-        let publicKey = key.getPublic().encode('hex');
+        const publicKey = key.getPublic().encode('hex', false);
 
-        let publicSha = sha3_256(publicKey);
+        const publicSha = sha3_256(publicKey);
 
         return 'Px' + publicSha.toUpperCase().substr(publicSha.length - 40);
     }
 
     /**
-     * Generates a private key and returns in in hex format
+     * Generates a private key and returns in hex format
      *
      * @method generatePrivateKey
      * @returns {string}
      */
     private static generatePrivateKey() : string {
 
-        let keyPair = WalletManager.EC.genKeyPair();
-        let privateKey = keyPair.getPrivate();
+        const keyPair = WalletManager.EC.genKeyPair();
+        const privateKey = keyPair.getPrivate();
 
         return privateKey.toString(16);
     }
@@ -80,6 +80,6 @@ export class WalletManager {
             //check if address is all uppercase or lowercase
             return (/^(Px)?[0-9a-f]{40}$/.test(address) || /^(Px)?[0-9A-F]{40}$/.test(address));
         }
-    };
+    }
 
 }

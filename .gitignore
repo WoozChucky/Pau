@@ -10,3 +10,5 @@ dist/
 \.idea/
 
 \.DS_Store
+
+/logs/

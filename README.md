@@ -10,7 +10,7 @@ This sample includes:
 
 * HTTP API
 * P2P Protocol
-* [Wallet Concept](src/blockchain/wallet/README.md)
+* [Wallet Concept](docs/blockchain/wallet/README.md)
 * Nodes Discovery
 * Local Database
 * Cryptography
@@ -32,16 +32,36 @@ local computer. If you haven't, do that first. You can find instructions @ Googl
 2. Install NPM dependencies:
 
         $ npm install
-        
-3. Transpile the source code
 
-        $ npm run grunt
-
-4. Start the development node:
+3. Start the development node (starts a node names master):
 
         $ npm start
 
-5. Open http://127.0.0.1:3000/v1/status in a web browser to view your service details.
+4. Open http://127.0.0.1:3000/v1/status in a web browser to view your service details.
+
+
+Development Scripts
+-------------------
+
+1. Start a single node
+
+       $ npm start
+
+2. Start a single node watching for changes
+
+        $ npm run start:watch
+
+3. Start a single node watching for changes and build to /dist folder
+
+        $ npm run start:dev
+
+4. Build to /dist folder
+
+        $ npm run build
+
+5. Run Linter
+    
+       $ npm run lint
 
 What Do I Do Next?
 ------------------

@@ -1,12 +1,22 @@
 {
     "compilerOptions": {
-      "module": "commonjs",
-      "target": "es6",
-      "noImplicitAny": true,
-      "outDir": "./dist",
-      "sourceMap": true
+        "module": "ES6",
+        "target": "ES6",
+        "rootDir": "src",
+        "esModuleInterop": true,
+        "noImplicitAny": true,
+        "outDir": "./dist",
+        "strict": true,
+        "sourceMap": true,
+        "moduleResolution": "Node"
     },
     "include": [
       "src/**/*"
-    ]
-  }
+    ],
+    "ts-node": {
+        // these options are overrides used only by ts-node
+        "compilerOptions": {
+            "module": "commonjs"
+        }
+    }
+}

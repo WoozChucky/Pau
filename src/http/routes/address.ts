@@ -39,10 +39,10 @@ export class AddressRoute extends BaseRoute {
 
         AddressManager.getAll()
             .then( addresses => {
-                BaseRoute.json(req, res, 200, addresses);
+                super.json(req, res, 200, addresses);
             })
             .catch((err : Error) => {
-                BaseRoute.json(req, res, 400, { message : `${err.name} - ${err.message}`});
+                super.json(req, res, 400, { message : `${err.name} - ${err.message}`});
             });
 
     }
@@ -60,10 +60,10 @@ export class AddressRoute extends BaseRoute {
 
         BlockchainManager.getBlock(req.params.address)
             .then(chain => {
-                BaseRoute.json(req, res, 200, chain);
+                super.json(req, res, 200, chain);
             })
             .catch((err : Error) => {
-                BaseRoute.json(req, res, 404, { message : `${err.name} - ${err.message}`});
+                super.json(req, res, 404, { message : `${err.name} - ${err.message}`});
             });
     }
 

@@ -12,7 +12,7 @@ const getPrivateFromWallet = (): string => {
 const getPublicFromWallet = (): string => {
     const privateKey = getPrivateFromWallet();
     const key = EC.keyFromPrivate(privateKey, 'hex');
-    return key.getPublic().encode('hex');
+    return key.getPublic().encode('hex', false);
 };
 
 const generatePrivateKey = (): string => {

@@ -31,10 +31,8 @@ export abstract class BaseRoute {
      * @param output {object} json object to send.
      * @return void
      */
-    public static json(req: Request, res: Response, code : number = 200, output: any = "") {
-
+    protected static json(req: Request, res: Response, code = 200, output: unknown = {}) {
       res.status(code).json(output);
-
     }
     
   }

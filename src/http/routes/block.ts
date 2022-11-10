@@ -43,10 +43,10 @@ export class BlockRoute extends BaseRoute {
 
         BlockchainManager.getChain()
             .then(chain => {
-                BaseRoute.json(req, res, 200, chain);
+                super.json(req, res, 200, chain);
             })
             .catch((err : Error) => {
-                BaseRoute.json(req, res, 400, { message : `${err.name} - ${err.message}`});
+                super.json(req, res, 400, { message : `${err.name} - ${err.message}`});
             });
     }
 
@@ -63,10 +63,10 @@ export class BlockRoute extends BaseRoute {
 
         BlockchainManager.getBlock(req.params.hash)
             .then(chain => {
-                BaseRoute.json(req, res, 200, chain);
+                super.json(req, res, 200, chain);
             })
             .catch((err : Error) => {
-                BaseRoute.json(req, res, 404, { message : `${err.name} - ${err.message}`});
+                super.json(req, res, 404, { message : `${err.name} - ${err.message}`});
             });
     }
 
@@ -83,7 +83,7 @@ export class BlockRoute extends BaseRoute {
 
         P2PServer.broadcastBlockchain();
 
-        BaseRoute.json(req, res, 200, {});
+        super.json(req, res, 200, {});
     }
 
     /**
@@ -99,10 +99,10 @@ export class BlockRoute extends BaseRoute {
 
         BlockchainManager.generateNextBlock(req.body.data)
             .then((block) => {
-                BaseRoute.json(req, res, 200, block);
+                super.json(req, res, 200, block);
             })
             .catch(err => {
-                BaseRoute.json(req, res, 500, err);
+                super.json(req, res, 500, err);
             });
     }
 

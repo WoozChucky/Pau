@@ -1,9 +1,9 @@
 import { Database } from './database/database-manager';
 import { FileSystem } from './utils/filesystem';
-import { HttpServer } from './httpServer/http-server';
+import { HttpServer } from './http/http-server';
 import { BlockchainManager } from "./blockchain/blockchain-manager";
 import { P2PServer } from "./p2p/p2p-server";
-import { logger } from './utils/logging';
+import { Logger } from './utils/logging';
 import {AddressManager} from "./net/address-manager";
 
 export class Application {
@@ -27,49 +27,49 @@ export class Application {
         Database.initialize(this.dataFolder + '/db/' + name);
 
         AddressManager.initialize(use_address)
-            .then(() => logger.info('AddressManager was initialized successfully.'))
-            .catch((err) => logger.error(err) );
+            .then(() => Logger.info('AddressManager was initialized successfully.'))
+            .catch((err) => Logger.error(err) );
 
         BlockchainManager.initialize()
-            .then(() => logger.info('BlockchainManager was initialized successfully.'))
-            .catch((err) => logger.error(err) );
+            .then(() => Logger.info('BlockchainManager was initialized successfully.'))
+            .catch((err) => Logger.error(err) );
 
         this.httpServer = new HttpServer(httpPort);
     }
 
-    public initialize() : void {
+    public async initialize() : Promise<void> {
 
-        process.on('SIGINT',() => {
-            logger.warn('Caught interrupt signal');
+        process.on('SIGINT',async () => {
+            Logger.warn('Caught interrupt signal');
 
-            Promise.all([AddressManager.saveLocally(), BlockchainManager.saveLocally()])
-                .then(() => {
-                    process.exit(0)
-                })
-                .catch(err => {
-                    logger.warn('Didn\'t saved data locally: ', err);
-                    process.exit(1)
-                });
+            try {
+                await AddressManager.saveLocally();
+                await BlockchainManager.saveLocally();
 
+                process.exit(0);
+            } catch (err) {
+                Logger.warn('Didn\'t saved data locally: ', err);
+                process.exit(1)
+            }
         });
 
         this.httpServer.on('listening', (port) => {
-            logger.info("HTTP Server listening on port: " + port);
+            Logger.info("HTTP Server listening on port: " + port);
         });
         this.httpServer.on('error', (err) => {
-            logger.error(err);
+            Logger.error(err);
             process.exit(1);
         });
 
         P2PServer.bus.on('listening', (port) => {
-            logger.info("P2P Server listening on port: " + port);
+            Logger.info("P2P Server listening on port: " + port);
         });
         P2PServer.bus.on('error', (err) => {
-            logger.error(err);
+            Logger.error(err);
             process.exit(1);
         });
         
-        this.httpServer.listen();
+        await this.httpServer.listen();
         P2PServer.start(this.p2pPort);
 
     }
