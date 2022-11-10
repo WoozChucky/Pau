@@ -1,9 +1,9 @@
+import express, { Router } from "express";
+import { PeerController } from "../controllers/peer-controller";
 
+export const PeerRouter = express.Router();
 
-this.router.get("/", PeerRoute.getPeers.bind(this));
-
-this.router.post('/', PeerRoute.addPeer.bind(this));
-
-this.router.post('/ask', PeerRoute.askPeer.bind(this));
-
-this.router.post('/ask/:peer', PeerRoute.askPeer.bind(this));
+PeerRouter.get('/', PeerController.getAll);
+PeerRouter.post('/', PeerController.add);
+PeerRouter.post('/ask', PeerController.ask);
+PeerRouter.post('/ask/:peer', PeerController.ask);

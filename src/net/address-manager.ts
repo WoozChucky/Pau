@@ -97,6 +97,25 @@ export class AddressManager {
 
     }
 
+    public static async getAddress(address: string) : Promise<Address> {
+
+        if(!AddressManager.inited) {
+            throw new Error("AddressManager is not initialized.");
+        }
+
+        await resourceLock.wait();
+
+        const foundAddress = AddressManager.addresses.find(addr => addr.endpoint === address);
+
+        resourceLock.release();
+
+        if (!foundAddress) {
+            throw new Error("Address not found");
+        }
+
+        return foundAddress;
+    }
+
     public static async saveLocally() : Promise<void> {
 
         if(!AddressManager.inited) {

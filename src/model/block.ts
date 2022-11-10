@@ -25,7 +25,7 @@ export class Block {
             && typeof block.previousHash === 'string'
             && typeof block.timestamp === 'number'
             && typeof block.data === 'object';
-    };
+    }
 
     public isValidStructure() : boolean {
         return typeof this.index === 'number'

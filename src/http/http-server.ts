@@ -8,6 +8,9 @@ import {morganMiddleware} from "./middlewares/morgan-middleware";
 import {Logger} from "../utils/logging";
 import { StatusRouter } from "./routes/status-route";
 import { BlockRouter } from "./routes/block-route";
+import { PeerRouter } from "./routes/peer-route";
+import { AddressRouter } from "./routes/address-route";
+import { WalletRouter } from "./routes/wallet-route";
 
 /**
  * The server.
@@ -92,6 +95,9 @@ export class HttpServer extends EventEmitter {
 
         this.router.use('/status', StatusRouter);
         this.router.use('/blocks', BlockRouter);
+        this.router.use('/peers', PeerRouter);
+        this.router.use('/address', AddressRouter);
+        this.router.use('/wallet', WalletRouter);
 
         //use router middleware
         this.app.use('/v1', this.router);
