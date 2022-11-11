@@ -1,39 +1,97 @@
+import path from "path";
+
+import { WinstonGraylog } from "@pskzcompany/winston-graylog";
 import { createLogger, transports, format } from "winston";
+// eslint-disable-next-line import/no-extraneous-dependencies
+import * as Transport from "winston-transport";
+
+import { Settings } from "../config";
+
+const logFormat = format.printf(({ timestamp, level, label, message }) => {
+  return `[${timestamp}] ${level} [${label}]: ${message}`;
+});
+
+const consoleFormat = format.combine(format.colorize(), logFormat);
+
+const fileFormatter = format.combine(format.json());
+
+const buildTransports = (): Transport[] | Transport => {
+  const trxs: Transport[] | Transport = [
+    new transports.Console({
+      format: consoleFormat,
+      handleExceptions: true,
+      level: "debug",
+    }),
+    new transports.File({
+      filename: "logs/errors.log",
+      level: "error",
+      dirname: "logs",
+      handleExceptions: true,
+      format: fileFormatter,
+      // 5MB
+      maxsize: 5242880,
+      maxFiles: 5,
+    }),
+    new transports.File({
+      filename: "logs/warnings.log",
+      level: "warn",
+      dirname: "logs",
+      handleExceptions: true,
+      format: fileFormatter,
+      // 5MB
+      maxsize: 5242880,
+      maxFiles: 5,
+    }),
+    new transports.File({
+      filename: "logs/info.log",
+      level: "info",
+      dirname: "logs",
+      handleExceptions: true,
+      format: fileFormatter,
+      // 5MB
+      maxsize: 5242880,
+      maxFiles: 5,
+    }),
+    new transports.File({
+      filename: "logs/debug.log",
+      level: "debug",
+      dirname: "logs",
+      handleExceptions: true,
+      format: fileFormatter,
+      // 5MB
+      maxsize: 5242880,
+      maxFiles: 5,
+    }),
+  ];
+
+  if (Settings.GraylogEnabled) {
+    trxs.push(
+      new WinstonGraylog({
+        format: fileFormatter,
+        level: "debug",
+        graylog: Settings.GraylogHost,
+        handleExceptions: true,
+        defaultMeta: {
+          release: Settings.AppVersion,
+        },
+      })
+    );
+  }
+
+  return trxs;
+};
 
 // configure logger
 export const Logger = createLogger({
-    exitOnError: false,
-    transports: [
-        new transports.Console({
-
-        }),
-        new transports.File({
-            filename: 'logs/errors.log',
-            level: 'error',
-            dirname: 'logs'
-        }),
-        new transports.File({
-            filename: 'logs/warnings.log',
-            level: 'warn',
-            dirname: 'logs'
-        }),
-        new transports.File({
-            filename: 'logs/info.log',
-            level: 'info',
-            dirname: 'logs'
-        }),
-        new transports.File({
-            filename: 'logs/debug.log',
-            level: 'debug',
-            dirname: 'logs'
-        }),
-    ],
-    format: format.combine(
-        format.colorize(),
-        format.timestamp(),
-        format.prettyPrint(),
-        format.printf(({ timestamp, level, message }) => {
-            return `[${timestamp}] ${level}: ${message}`;
-        })
-    )
+  exitOnError: false,
+  format: format.combine(
+    format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain,@typescript-eslint/no-non-null-assertion
+    format.label({ label: path.basename(require.main?.filename!) }),
+    format.metadata({ fillExcept: ["message", "level", "timestamp", "label"] }),
+    format.printf(({ timestamp, level, label, message }) => {
+      return `[${timestamp}] ${level} [${label}]: ${message}`;
+    })
+  ),
+  transports: buildTransports(),
 });
