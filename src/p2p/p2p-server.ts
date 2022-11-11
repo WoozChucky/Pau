@@ -12,17 +12,18 @@ import { Logger } from "../utils/logging";
 import { AddressManager } from "../net/address-manager";
 import { Block } from "../model/block";
 import { Address } from "../model/address";
+import { EventBus } from "../events/event-bus";
 
 export class P2PServer extends EventEmitter {
-  private static ASK_PEERS_TIMEOUT = 600000; // 10 Minutes
-  private static LOAD_ADDRESSES_TIMER = 10000; // 10 Seconds
+  // 10 Minutes
+  private static ASK_PEERS_TIMEOUT = 600000;
+  // 10 Seconds
+  private static LOAD_ADDRESSES_TIMER = 10000;
 
   private static port: number;
   private static sockets: WebSocket[] = [];
 
   private static server: Server;
-
-  public static bus: EventEmitter = new EventEmitter();
 
   public static start(port: number): void {
     this.port = port;
@@ -30,22 +31,22 @@ export class P2PServer extends EventEmitter {
 
     this.server.on("connection", this.handleConnection.bind(this));
 
-    this.server.on("error", (error: Error) => {
-      this.bus.emit(
-        "error",
-        `P2P Port ${this.port} is already in use! ${error.message}`
-      );
-    });
+    this.server.on("error", (error: Error) =>
+      EventBus.instance.dispatch<{ port: number; error: Error }>(
+        "p2p-server.error",
+        { port: this.port, error }
+      )
+    );
 
     this.server.on("listening", () => {
-      this.bus.emit("listening", this.port);
+      EventBus.instance.dispatch<number>("p2p-server.listening", this.port);
 
       // Load all address 10 seconds after booting the p2p server
       setTimeout(() => {
         AddressManager.getAll()
           .then((addresses) => {
             addresses
-              .map((a) => a.endpoint)
+              .map((addr: Address) => addr.endpoint)
               .forEach((addr) => {
                 P2PServer.connectToPeer(addr);
               });
@@ -63,7 +64,7 @@ export class P2PServer extends EventEmitter {
 
     const socks = P2PServer.getSockets();
 
-    if (socks.find((s) => s.url == endpoint) != undefined) {
+    if (socks.find((sock: WebSocket) => sock.url === endpoint) !== undefined) {
       Logger.warn(`Already connected to ${endpoint}`);
       return;
     }
@@ -97,9 +98,11 @@ export class P2PServer extends EventEmitter {
   public static askPeers(endpoint: string): void {
     Logger.info("Asking peers from connected sockets.");
 
-    const socket = this.sockets.find((s) => s.url == endpoint);
+    const socket = this.sockets.find(
+      (sock: WebSocket) => sock.url === endpoint
+    );
 
-    if (socket != undefined) {
+    if (socket) {
       this.write(socket, { type: MessageType.QUERY_PEERS, data: null });
     } else {
       this.sockets.forEach((socket) => {

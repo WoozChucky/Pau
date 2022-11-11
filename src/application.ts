@@ -59,19 +59,24 @@ export class Application {
     EventBus.instance.register(
       "http-server.error-listening",
       (port: number) => {
-        Logger.error(`HTTP Port ${this.httpPort} is already in use.`);
+        Logger.error(`HTTP Port ${port} is already in use.`);
         process.exit(1);
       }
     );
 
-    P2PServer.bus.on("listening", (port) => {
+    EventBus.instance.register("p2p-server.listening", (port: number) => {
       Logger.info(`P2P Server listening on port: ${port}`);
     });
 
-    P2PServer.bus.on("error", (err) => {
-      Logger.error(err);
-      process.exit(1);
-    });
+    EventBus.instance.register(
+      "p2p-server.error",
+      (arg: { port: number; error: Error }) => {
+        Logger.error(
+          `P2P Port ${arg.port} is already in use! ${arg.error.message}`
+        );
+        process.exit(1);
+      }
+    );
 
     await this.httpServer.listen();
     P2PServer.start(this.p2pPort);
