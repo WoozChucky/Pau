@@ -14,6 +14,11 @@ import { Block } from "../model/block";
 import { Address } from "../model/address";
 import { EventBus } from "../events/event-bus";
 
+export interface P2PServerError {
+  port: number;
+  error: Error;
+}
+
 export class P2PServer extends EventEmitter {
   // 10 Minutes
   private static ASK_PEERS_TIMEOUT = 600000;

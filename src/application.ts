@@ -2,7 +2,7 @@ import { Database } from "./database/database-manager";
 import { FileSystem } from "./utils/filesystem";
 import { HttpServer } from "./http/http-server";
 import { BlockchainManager } from "./blockchain/blockchain-manager";
-import { P2PServer } from "./p2p/p2p-server";
+import { P2PServer, P2PServerError } from "./p2p/p2p-server";
 import { Logger } from "./utils/logging";
 import { AddressManager } from "./net/address-manager";
 import { EventBus } from "./events/event-bus";
@@ -53,33 +53,44 @@ export class Application {
     // process.on("SIGKILL", this.GracefullyExit);
     process.on("SIGTERM", this.GracefullyExit);
 
-    EventBus.instance.register("http-server.listening", (port: number) =>
-      Logger.info(`HTTP Server listening on port: ${port}`)
+    EventBus.instance.register(
+      "http-server.listening",
+      this.onHttpServerListening
     );
     EventBus.instance.register(
       "http-server.error-listening",
-      (port: number) => {
-        Logger.error(`HTTP Port ${port} is already in use.`);
-        process.exit(1);
-      }
+      this.onHttpServerListeningError
     );
-
-    EventBus.instance.register("p2p-server.listening", (port: number) => {
-      Logger.info(`P2P Server listening on port: ${port}`);
-    });
 
     EventBus.instance.register(
-      "p2p-server.error",
-      (arg: { port: number; error: Error }) => {
-        Logger.error(
-          `P2P Port ${arg.port} is already in use! ${arg.error.message}`
-        );
-        process.exit(1);
-      }
+      "p2p-server.listening",
+      this.onP2PServerListening
     );
+
+    EventBus.instance.register("p2p-server.error", this.onP2PServerError);
 
     await this.httpServer.listen();
     P2PServer.start(this.p2pPort);
+  }
+
+  private onHttpServerListening(port: number) {
+    Logger.info(`HTTP Server listening on port: ${port}`);
+  }
+
+  private onHttpServerListeningError(port: number) {
+    Logger.error(`HTTP Port ${port} is already in use.`);
+    process.exit(1);
+  }
+
+  private onP2PServerListening(port: number) {
+    Logger.info(`P2P Server listening on port: ${port}`);
+  }
+
+  private onP2PServerError(arg: P2PServerError) {
+    Logger.error(
+      `P2P Port ${arg.port} is already in use! ${arg.error.message}`
+    );
+    process.exit(1);
   }
 
   private async GracefullyExit() {

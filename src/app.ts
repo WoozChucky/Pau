@@ -78,4 +78,7 @@ const appInstance = new Application(
   useAddress
 );
 
-appInstance.initialize().then().catch();
+appInstance
+  .initialize()
+  .then(() => Logger.info(`Node ${name} UP and running...`))
+  .catch(() => Logger.error(`Node ${name} failed to start`));
