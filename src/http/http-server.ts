@@ -9,6 +9,7 @@ import helmet from "helmet";
 
 import { isPortTaken } from "../utils/http";
 import { Logger } from "../utils/logging";
+import { EventBus } from "../events/event-bus";
 
 import { morganMiddleware } from "./middlewares/morgan-middleware";
 import { StatusRouter } from "./routes/status-route";
@@ -22,7 +23,7 @@ import { WalletRouter } from "./routes/wallet-route";
  *
  * @class HttpServer
  */
-export class HttpServer extends EventEmitter {
+export class HttpServer {
   private app: Express;
   private readonly router: express.Router;
   private readonly httpPort: number;
@@ -34,7 +35,6 @@ export class HttpServer extends EventEmitter {
    * @constructor
    */
   constructor(port: number) {
-    super();
     this.httpPort = port;
 
     // create express js application
@@ -58,12 +58,18 @@ export class HttpServer extends EventEmitter {
 
       if (notTaken) {
         this.app.listen(this.httpPort);
-        this.emit("listening", this.httpPort);
+        EventBus.instance.dispatch<number>(
+          "http-server.listening",
+          this.httpPort
+        );
       } else {
-        this.emit("error", `HTTP Port ${this.httpPort} is already in use.`);
+        EventBus.instance.dispatch<number>(
+          "http-server.error-listening",
+          this.httpPort
+        );
       }
     } catch (err) {
-      this.emit("error", err);
+      EventBus.instance.dispatch<unknown>("http-server.error", err);
     }
   }
 
