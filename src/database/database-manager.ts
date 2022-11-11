@@ -5,16 +5,27 @@ export class Database {
   public static BLOCKCHAIN_KEY = "blockchain_key";
   public static ADDRESS_LIST_KEY = "address_list_key";
 
-  private static db: LevelUp<LevelDown>;
+  private static singletonInstance: Database;
 
-  private static initialized = false;
+  private db: LevelUp<LevelDown> | null = null;
 
-  public static initialize(location: string): void {
-    if (Database.initialized) {
+  private initialized = false;
+
+  private constructor() {}
+
+  public static get instance(): Database {
+    if (!Database.singletonInstance) {
+      Database.singletonInstance = new Database();
+    }
+    return Database.singletonInstance;
+  }
+
+  public initialize(location: string): void {
+    if (this.initialized) {
       throw new Error("Database already initialized");
     }
 
-    Database.db = levelup(leveldown(location), {
+    this.db = levelup(leveldown(location), {
       createIfMissing: true,
       errorIfExists: false,
       compression: true,
@@ -22,29 +33,29 @@ export class Database {
       valueEncoding: "utf8", // JSON also supported
     });
 
-    Database.initialized = true;
+    this.initialized = true;
   }
 
-  public static async get(key: string): Promise<string> {
+  public async get(key: string): Promise<string> {
     this.checkDatabaseStatus();
 
-    return (await Database.db.get(key)).toString();
+    return (await this.db!.get(key)).toString();
   }
 
-  public static async put(key: string, value: string): Promise<void> {
+  public async put(key: string, value: string) {
     this.checkDatabaseStatus();
 
-    return await Database.db.put(key, value);
+    return await this.db?.put(key, value);
   }
 
-  public static async delete(key: string): Promise<void> {
+  public async delete(key: string): Promise<void> {
     this.checkDatabaseStatus();
 
-    return await Database.db.del(key);
+    return await this.db?.del(key);
   }
 
-  private static checkDatabaseStatus(): void {
-    if (!Database.initialized) {
+  private checkDatabaseStatus(): void {
+    if (!this.initialized) {
       throw new Error("Database not initialized");
     }
   }

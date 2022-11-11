@@ -31,7 +31,7 @@ export class Application {
     FileSystem.createFolderSync(this.dataFolder);
     FileSystem.createFolderSync(`${this.dataFolder}/db`);
     FileSystem.createFolderSync(`${this.dataFolder}/logs`);
-    Database.initialize(`${this.dataFolder}/db/${name}`);
+    Database.instance.initialize(`${this.dataFolder}/db/${name}`);
   }
 
   public async initialize(): Promise<void> {
@@ -49,7 +49,7 @@ export class Application {
     this.httpServer = new HttpServer(this.httpPort);
 
     process.on("SIGINT", this.GracefullyExit);
-    process.on("SIGKILL", this.GracefullyExit);
+    // process.on("SIGKILL", this.GracefullyExit);
     process.on("SIGTERM", this.GracefullyExit);
 
     this.httpServer.on("listening", (port) =>

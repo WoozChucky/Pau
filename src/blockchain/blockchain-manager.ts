@@ -32,7 +32,7 @@ export class BlockchainManager {
     await resourceLock.wait();
 
     try {
-      const chain = await Database.get(Database.BLOCKCHAIN_KEY);
+      const chain = await Database.instance.get(Database.BLOCKCHAIN_KEY);
       BlockchainManager.chain = JSON.parse(chain);
     } catch (e) {
       Logger.warn(
@@ -146,7 +146,7 @@ export class BlockchainManager {
 
     resourceLock.release();
 
-    await Database.put(Database.BLOCKCHAIN_KEY, JSON.stringify(chain));
+    await Database.instance.put(Database.BLOCKCHAIN_KEY, JSON.stringify(chain));
 
     Logger.info("Safely written blockchain database.");
   }

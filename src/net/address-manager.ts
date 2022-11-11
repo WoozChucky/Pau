@@ -45,7 +45,8 @@ export class AddressManager {
           Logger.warn(err);
         });
     } else {
-      Database.get(Database.ADDRESS_LIST_KEY)
+      Database.instance
+        .get(Database.ADDRESS_LIST_KEY)
         .then((output) => {
           AddressManager.addresses = JSON.parse(output);
         })
@@ -54,7 +55,7 @@ export class AddressManager {
         });
     }
 
-    setInterval(this.saveLocally, this.SAVE_TIMEOUT);
+    setInterval(AddressManager.saveLocally, this.SAVE_TIMEOUT);
   }
 
   public static async add(address: Address): Promise<void> {
@@ -124,7 +125,7 @@ export class AddressManager {
 
     resourceLock.release();
 
-    return await Database.put(
+    return await Database.instance.put(
       Database.ADDRESS_LIST_KEY,
       JSON.stringify(addressList)
     )
