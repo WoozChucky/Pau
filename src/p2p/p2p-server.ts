@@ -48,7 +48,8 @@ export class P2PServer extends EventEmitter {
 
       // Load all address 10 seconds after booting the p2p server
       setTimeout(() => {
-        AddressManager.getAll()
+        AddressManager.instance
+          .getAll()
           .then((addresses) => {
             addresses
               .map((addr: Address) => addr.endpoint)
@@ -80,16 +81,11 @@ export class P2PServer extends EventEmitter {
      */
 
     const ws: WebSocket = new WebSocket(endpoint);
-    ws.on("open", () => {
+    ws.on("open", async () => {
       this.handleConnection(ws);
 
-      AddressManager.add(new Address(endpoint))
-        .then(async () => {
-          await AddressManager.saveLocally();
-        })
-        .catch((err: Error) => {
-          Logger.warn(err);
-        });
+      await AddressManager.instance.add(new Address(endpoint));
+      await AddressManager.instance.saveLocally();
     });
     ws.on("error", (err) => {
       Logger.warn("connection failed -> ", err);
@@ -125,7 +121,7 @@ export class P2PServer extends EventEmitter {
   }
 
   private static initMessageHandler(socket: WebSocket) {
-    socket.on("message", (data: string) => {
+    socket.on("message", async (data: string) => {
       try {
         const message: Message | null = P2PServer.JSONtoObject<Message>(data);
         if (message === null) {
@@ -178,18 +174,18 @@ export class P2PServer extends EventEmitter {
             break;
           }
           case MessageType.QUERY_PEERS:
-            AddressManager.getAll()
-              .then((addresses) => {
-                const sockets = addresses.map((addr: Address) => addr.endpoint);
+            try {
+              const addresses = await AddressManager.instance.getAll();
 
-                this.write(socket, {
-                  type: MessageType.RESPONSE_PEERS,
-                  data: JSON.stringify(sockets),
-                });
-              })
-              .catch((err) => {
-                Logger.warn("Could not retrieve addresses: ", err);
+              const sockets = addresses.map((addr: Address) => addr.endpoint);
+
+              this.write(socket, {
+                type: MessageType.RESPONSE_PEERS,
+                data: JSON.stringify(sockets),
               });
+            } catch (error) {
+              Logger.warn("Could not retrieve addresses: ", error);
+            }
 
             break;
           case MessageType.RESPONSE_PEERS: {

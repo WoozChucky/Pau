@@ -28,16 +28,16 @@ export class Application {
     this.name = name;
     this.dataFolder = dataLocation;
     this.useAddress = useAddress;
-
-    FileSystem.createFolderSync(this.dataFolder);
-    FileSystem.createFolderSync(`${this.dataFolder}/db`);
-    FileSystem.createFolderSync(`${this.dataFolder}/logs`);
-    Database.instance.initialize(`${this.dataFolder}/db/${name}`);
   }
 
   public async initialize(): Promise<void> {
     try {
-      await AddressManager.initialize(this.useAddress);
+      FileSystem.createFolderSync(this.dataFolder);
+      FileSystem.createFolderSync(`${this.dataFolder}/db`);
+      FileSystem.createFolderSync(`${this.dataFolder}/logs`);
+      Database.instance.initialize(`${this.dataFolder}/db/${this.name}`);
+
+      await AddressManager.instance.initialize(this.useAddress);
       Logger.info("AddressManager was initialized successfully.");
 
       await BlockchainManager.initialize();
@@ -74,7 +74,7 @@ export class Application {
   }
 
   private onHttpServerListening(port: number) {
-    Logger.info(`HTTP Server listening on port: ${port}`);
+    Logger.info(`HTTP Server listening on port ${port}`);
   }
 
   private onHttpServerListeningError(port: number) {
@@ -83,7 +83,7 @@ export class Application {
   }
 
   private onP2PServerListening(port: number) {
-    Logger.info(`P2P Server listening on port: ${port}`);
+    Logger.info(`P2P Server listening on port ${port}`);
   }
 
   private onP2PServerError(arg: P2PServerError) {
@@ -97,7 +97,7 @@ export class Application {
     Logger.warn("Caught interrupt signal");
 
     try {
-      await AddressManager.saveLocally();
+      await AddressManager.instance.saveLocally();
       await BlockchainManager.saveLocally();
 
       process.exit(0);
