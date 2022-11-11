@@ -13,7 +13,7 @@ import { AddressManager } from "../net/address-manager";
 import { Block } from "../model/block";
 import { Address } from "../model/address";
 
-export class P2PServer {
+export class P2PServer extends EventEmitter {
   private static ASK_PEERS_TIMEOUT = 600000; // 10 Minutes
   private static LOAD_ADDRESSES_TIMER = 10000; // 10 Seconds
 
