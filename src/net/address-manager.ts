@@ -1,9 +1,9 @@
-import { Mutex } from "async-mutex";
+import { Mutex } from 'async-mutex';
 
-import { Database } from "../database/database-manager";
-import { Address } from "../model/address";
-import { Logger } from "../utils/logging";
-import { FileSystem } from "../utils/filesystem";
+import { Database } from '../database/database-manager';
+import { Address } from '../model/address';
+import { Logger } from '../utils/logging';
+import { FileSystem } from '../utils/filesystem';
 
 const mutex = new Mutex();
 
@@ -20,17 +20,17 @@ export class AddressManager {
   // 10 Minutes
   private static SAVE_TIMEOUT = 600000;
 
-  private static DEFAULT_FILE_LOCATION = "addr.txt";
+  private static DEFAULT_FILE_LOCATION = 'addr.txt';
 
   private static parseAddress(input: string): Address | null {
-    const arr = input.split(":");
+    const arr = input.split(':');
 
     if (arr.length !== 2) return null;
 
     const port = parseInt(arr[1], 10);
     const ip = arr[0];
 
-    if (Number.isInteger(port) && ip.split(".").length === 4) {
+    if (Number.isInteger(port) && ip.split('.').length === 4) {
       return new Address(input);
     }
 
@@ -47,7 +47,7 @@ export class AddressManager {
 
   public async initialize(useAddressFile = false) {
     if (this.initialized) {
-      throw new Error("AddressManager is already initialized.");
+      throw new Error('AddressManager is already initialized.');
     }
 
     this.initialized = true;
@@ -64,7 +64,7 @@ export class AddressManager {
         if (addr) {
           try {
             await this.add(addr);
-            Logger.info("Added address -> ", addr);
+            Logger.info(`Added address -> ${addr.endpoint}`, addr);
           } catch (error) {
             Logger.warn(error);
           }
@@ -80,7 +80,7 @@ export class AddressManager {
 
   public async add(address: Address): Promise<void> {
     if (!this.initialized) {
-      throw new Error("AddressManager is not initialized.");
+      throw new Error('AddressManager is not initialized.');
     }
 
     const alreadyExists = await this.addressAlreadyExists(address);
@@ -100,7 +100,7 @@ export class AddressManager {
 
   public async getAll(): Promise<Address[]> {
     if (!this.initialized) {
-      throw new Error("AddressManager is not initialized.");
+      throw new Error('AddressManager is not initialized.');
     }
 
     const unlock = await mutex.acquire();
@@ -114,7 +114,7 @@ export class AddressManager {
 
   public async getAddress(addressEndpoint: string): Promise<Address> {
     if (!this.initialized) {
-      throw new Error("AddressManager is not initialized.");
+      throw new Error('AddressManager is not initialized.');
     }
 
     const unlock = await mutex.acquire();
@@ -126,7 +126,7 @@ export class AddressManager {
     unlock();
 
     if (!foundAddress) {
-      throw new Error("Address not found");
+      throw new Error('Address not found');
     }
 
     return foundAddress;
@@ -134,7 +134,7 @@ export class AddressManager {
 
   public async saveLocally(): Promise<void> {
     if (!this.initialized) {
-      throw new Error("AddressManager is not initialized.");
+      throw new Error('AddressManager is not initialized.');
     }
 
     const unlock = await mutex.acquire();
@@ -149,10 +149,10 @@ export class AddressManager {
         JSON.stringify(addressList)
       );
 
-      Logger.info("Safely written address database.");
+      Logger.info('Safely written address database.');
     } catch (err) {
       Logger.warning(
-        "An error occurred while saving addresses database -> ",
+        'An error occurred while saving addresses database -> ',
         err
       );
     }

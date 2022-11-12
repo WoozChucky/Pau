@@ -1,6 +1,6 @@
 module.exports = {
     extends: [
-      // "plugin:@shopify/typescript",
+      "plugin:@shopify/typescript",
       "plugin:@shopify/prettier",
       "eslint:recommended",
       "plugin:@typescript-eslint/eslint-recommended",
@@ -18,8 +18,9 @@ module.exports = {
     rules: {
         // 0 - disabled     1 - warning   2 - error
         "no-console": 2,
-        "prettier/prettier": 2,
-        'max-len': [2, { code: 120, ignoreUrls: true }]
+        "prettier/prettier": ['error', { singleQuote: true,  }],
+        'max-len': [2, { code: 120, ignoreUrls: true }],
+        'quotes': [2, "single", { "avoidEscape": true, "allowTemplateLiterals": true }]
     },
     root: true,
     env: {

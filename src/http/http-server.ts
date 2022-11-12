@@ -1,22 +1,23 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from 'events';
 
-import swaggerUi from "swagger-ui-express";
-import express, { Express } from "express";
-import errorHandler from "errorhandler";
-import cookieParser from "cookie-parser";
-import csrf from "csurf";
-import helmet from "helmet";
+import swaggerUi from 'swagger-ui-express';
+import express, { Express } from 'express';
+import errorHandler from 'errorhandler';
+import cookieParser from 'cookie-parser';
+import csrf from 'csurf';
+import helmet from 'helmet';
 
-import { isPortTaken } from "../utils/http";
-import { Logger } from "../utils/logging";
-import { EventBus } from "../events/event-bus";
+import { isPortTaken } from '../utils/http';
+import { Logger } from '../utils/logging';
+import { EventBus } from '../events/event-bus';
+import { Events } from '../events/events';
 
-import { morganMiddleware } from "./middlewares/morgan-middleware";
-import { StatusRouter } from "./routes/status-route";
-import { BlockRouter } from "./routes/block-route";
-import { PeerRouter } from "./routes/peer-route";
-import { AddressRouter } from "./routes/address-route";
-import { WalletRouter } from "./routes/wallet-route";
+import { morganMiddleware } from './middlewares/morgan-middleware';
+import { StatusRouter } from './routes/status-route';
+import { BlockRouter } from './routes/block-route';
+import { PeerRouter } from './routes/peer-route';
+import { AddressRouter } from './routes/address-route';
+import { WalletRouter } from './routes/wallet-route';
 
 /**
  * The server.
@@ -59,17 +60,17 @@ export class HttpServer {
       if (notTaken) {
         this.app.listen(this.httpPort);
         EventBus.instance.dispatch<number>(
-          "http-server.listening",
+          Events.Http.Listening,
           this.httpPort
         );
       } else {
         EventBus.instance.dispatch<number>(
-          "http-server.error-listening",
+          Events.Http.ErrorListening,
           this.httpPort
         );
       }
     } catch (err) {
-      EventBus.instance.dispatch<unknown>("http-server.error", err);
+      EventBus.instance.dispatch<unknown>(Events.Http.Error, err);
     }
   }
 
@@ -80,7 +81,7 @@ export class HttpServer {
    * @method api
    */
   private api(): void {
-    Logger.info("TODO: Create Rest API calls, or remote method");
+    Logger.info('TODO: Create Rest API calls, or remote method');
   }
 
   /**
@@ -90,11 +91,11 @@ export class HttpServer {
    * @method config
    */
   private config(): void {
-    this.app.disable("x-powered-by");
+    this.app.disable('x-powered-by');
 
-    this.app.set("json spaces", 2);
+    this.app.set('json spaces', 2);
 
-    this.app.set("trust proxy", 1);
+    this.app.set('trust proxy', 1);
 
     this.app.use(helmet());
 
@@ -111,14 +112,14 @@ export class HttpServer {
     // use query string parser middleware
     this.app.use(express.urlencoded({ extended: true }));
 
-    this.app.use(express.static("public"));
+    this.app.use(express.static('public'));
 
     this.app.use(
-      "/docs",
+      '/docs',
       swaggerUi.serve,
       swaggerUi.setup(undefined, {
         swaggerOptions: {
-          url: "/swagger.json",
+          url: '/swagger.json',
         },
       })
     );
@@ -137,7 +138,7 @@ export class HttpServer {
           } - ${req.ip}`
         );
         */
-      console.log("error middlware");
+      console.log('error middlware');
       // res.status(err.status || 500);
       next();
     });
@@ -153,13 +154,13 @@ export class HttpServer {
    * @method api
    */
   private routes(): void {
-    this.router.use("/status", StatusRouter);
-    this.router.use("/blocks", BlockRouter);
-    this.router.use("/peers", PeerRouter);
-    this.router.use("/address", AddressRouter);
-    this.router.use("/wallet", WalletRouter);
+    this.router.use('/status', StatusRouter);
+    this.router.use('/blocks', BlockRouter);
+    this.router.use('/peers', PeerRouter);
+    this.router.use('/address', AddressRouter);
+    this.router.use('/wallet', WalletRouter);
 
     // use router middleware
-    this.app.use("/v1", this.router);
+    this.app.use('/v1', this.router);
   }
 }
