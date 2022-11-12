@@ -19,12 +19,12 @@ export interface P2PServerError {
   error: Error;
 }
 
-export class P2PServer extends EventEmitter {
-  // 10 Minutes
-  private static ASK_PEERS_TIMEOUT = 600000;
-  // 10 Seconds
-  private static LOAD_ADDRESSES_TIMER = 10000;
+// 10 Minutes
+const ASK_PEERS_TIMEOUT = 600000;
+// 10 Seconds
+const LOAD_ADDRESSES_TIMER = 10000;
 
+export class P2PServer extends EventEmitter {
   private static port: number;
   private static sockets: WebSocket[] = [];
 
@@ -58,14 +58,14 @@ export class P2PServer extends EventEmitter {
               });
           })
           .catch((err) => Logger.warn(err));
-      }, P2PServer.LOAD_ADDRESSES_TIMER);
+      }, LOAD_ADDRESSES_TIMER);
     });
 
     // setInterval(P2PServer.askPeers.bind(P2PServer), P2PServer.ASK_PEERS_TIMEOUT);
-    setInterval(P2PServer.askLatestBlockFromPeers, P2PServer.ASK_PEERS_TIMEOUT);
+    setInterval(P2PServer.askLatestBlockFromPeers, ASK_PEERS_TIMEOUT);
   }
 
-  public static connectToPeer(endpoint: any): void {
+  public static connectToPeer(endpoint: string): void {
     Logger.info(`Connecting to peer -> ${endpoint}`);
 
     const socks = P2PServer.getSockets();
@@ -136,7 +136,8 @@ export class P2PServer extends EventEmitter {
 
         switch (message.type) {
           case MessageType.QUERY_LATEST_BLOCK:
-            BlockchainManager.getLatestBlock()
+            BlockchainManager.instance
+              .getLatestBlock()
               .then((block) => {
                 this.write(socket, {
                   type: MessageType.RESPONSE_BLOCKCHAIN,
@@ -147,7 +148,8 @@ export class P2PServer extends EventEmitter {
 
             break;
           case MessageType.QUERY_ALL_BLOCKS:
-            BlockchainManager.getChain()
+            BlockchainManager.instance
+              .getChain()
               .then((chain) => {
                 this.write(socket, {
                   type: MessageType.RESPONSE_BLOCKCHAIN,
@@ -235,7 +237,8 @@ export class P2PServer extends EventEmitter {
   }
 
   public static broadcastBlockchain(): void {
-    BlockchainManager.getChain()
+    BlockchainManager.instance
+      .getChain()
       .then((chain) => {
         this.broadcast({
           type: MessageType.RESPONSE_BLOCKCHAIN,
@@ -245,15 +248,11 @@ export class P2PServer extends EventEmitter {
       .catch((err) => Logger.error(err));
   }
 
-  public static broadcastLatestBlock() {
-    BlockchainManager.getLatestBlock()
-      .then((block) => {
-        this.broadcast({
-          type: MessageType.RESPONSE_BLOCKCHAIN,
-          data: JSON.stringify([block]),
-        });
-      })
-      .catch((err) => Logger.error(err));
+  public static broadcastLatestBlock(block: Block) {
+    this.broadcast({
+      type: MessageType.RESPONSE_BLOCKCHAIN,
+      data: JSON.stringify([block]),
+    });
   }
 
   private static askLatestBlockFromPeers() {
@@ -282,14 +281,15 @@ export class P2PServer extends EventEmitter {
     }
     const latestBlockReceived: Block = receivedChain[receivedChain.length - 1];
 
-    BlockchainManager.getLatestBlock()
+    BlockchainManager.instance
+      .getLatestBlock()
       .then(async (latestBlockHeld: Block) => {
         if (latestBlockReceived.index > latestBlockHeld.index) {
           Logger.info(
             `blockchain possibly behind. We got block index: ${latestBlockHeld.index} Peer got block index: ${latestBlockReceived.index}`
           );
           if (latestBlockHeld.hash === latestBlockReceived.previousHash) {
-            const addedBlock = await BlockchainManager.addBlock(
+            const addedBlock = await BlockchainManager.instance.addBlock(
               latestBlockReceived
             );
             if (addedBlock) {
@@ -309,7 +309,8 @@ export class P2PServer extends EventEmitter {
             Logger.info(
               "Received blockchain is longer than current blockchain"
             );
-            BlockchainManager.replaceChain(receivedChain)
+            BlockchainManager.instance
+              .replaceChain(receivedChain)
               .then(() => {
                 Logger.info("Replaced blockchain with received one.");
                 // P2PServer.broadcastBlockchain(); // This might not be a good practise

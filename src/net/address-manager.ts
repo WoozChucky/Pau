@@ -1,11 +1,11 @@
-import { AsyncSemaphore } from "@esfx/async";
+import { Mutex } from "async-mutex";
 
 import { Database } from "../database/database-manager";
 import { Address } from "../model/address";
 import { Logger } from "../utils/logging";
 import { FileSystem } from "../utils/filesystem";
 
-const resourceLock = new AsyncSemaphore(1);
+const mutex = new Mutex();
 
 export class AddressManager {
   private static singletonInstance: AddressManager;
@@ -91,11 +91,11 @@ export class AddressManager {
       );
     }
 
-    await resourceLock.wait();
+    const unlock = await mutex.acquire();
 
     this.addresses.push(address);
 
-    resourceLock.release();
+    unlock();
   }
 
   public async getAll(): Promise<Address[]> {
@@ -103,11 +103,11 @@ export class AddressManager {
       throw new Error("AddressManager is not initialized.");
     }
 
-    await resourceLock.wait();
+    const unlock = await mutex.acquire();
 
     const addresses = this.addresses;
 
-    resourceLock.release();
+    unlock();
 
     return addresses;
   }
@@ -117,13 +117,13 @@ export class AddressManager {
       throw new Error("AddressManager is not initialized.");
     }
 
-    await resourceLock.wait();
+    const unlock = await mutex.acquire();
 
     const foundAddress = this.addresses.find(
       (addr) => addr.endpoint === addressEndpoint
     );
 
-    resourceLock.release();
+    unlock();
 
     if (!foundAddress) {
       throw new Error("Address not found");
@@ -137,11 +137,11 @@ export class AddressManager {
       throw new Error("AddressManager is not initialized.");
     }
 
-    await resourceLock.wait();
+    const unlock = await mutex.acquire();
 
     const addressList = this.addresses;
 
-    resourceLock.release();
+    unlock();
 
     try {
       await Database.instance.put(
@@ -159,11 +159,11 @@ export class AddressManager {
   }
 
   private async addressAlreadyExists(address: Address): Promise<boolean> {
-    await resourceLock.wait();
+    const unlock = await mutex.acquire();
 
     const addressList = this.addresses;
 
-    resourceLock.release();
+    unlock();
 
     return (
       addressList.find((addr) => addr.endpoint === address.endpoint) !==

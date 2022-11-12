@@ -15,7 +15,7 @@ import { Block } from "../../model/block";
  */
 const getAll = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const chain = await BlockchainManager.getChain();
+    const chain = await BlockchainManager.instance.getChain();
     res.json(chain);
   } catch (err: any) {
     res.status(400).json({ message: `${err.message}` });
@@ -36,7 +36,7 @@ const getOneByHash = async (
   next: NextFunction
 ) => {
   try {
-    const block = await BlockchainManager.getBlock(req.params.hash);
+    const block = await BlockchainManager.instance.getBlock(req.params.hash);
     res.json(block);
   } catch (err: any) {
     res.status(404).json({ message: `${err.message}` });
@@ -70,33 +70,12 @@ const generateBlock = async (
   res: Response,
   next: NextFunction
 ) => {
-  const block = await BlockchainManager.generateNextBlock(req.body.data);
+  const block = await BlockchainManager.instance.generateNextBlock(
+    req.body.data
+  );
 
   res.json(block);
 };
-
-@Route("blocks")
-export class Controller {
-  @Get("/")
-  public async findAll(): Promise<object> {
-    return {
-      message: "pong",
-    };
-  }
-
-  @Get("/:hash")
-  public async findOne(@Path() hash: string): Promise<Block> {
-    return {
-      timestamp: 0,
-      index: 0,
-      data: {},
-      hash: "",
-      difficulty: 0,
-      nonce: 0,
-      previousHash: "",
-    };
-  }
-}
 
 export const BlockController = {
   getAll,

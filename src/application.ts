@@ -6,6 +6,8 @@ import { P2PServer, P2PServerError } from "./p2p/p2p-server";
 import { Logger } from "./utils/logging";
 import { AddressManager } from "./net/address-manager";
 import { EventBus } from "./events/event-bus";
+import { Block } from "./model/block";
+import { Events } from "./events/events";
 
 export class Application {
   private readonly httpPort: number;
@@ -40,7 +42,7 @@ export class Application {
       await AddressManager.instance.initialize(this.useAddress);
       Logger.info("AddressManager was initialized successfully.");
 
-      await BlockchainManager.initialize();
+      await BlockchainManager.instance.initialize();
       Logger.info("BlockchainManager was initialized successfully.");
     } catch (err) {
       Logger.error(err);
@@ -54,23 +56,30 @@ export class Application {
     process.on("SIGTERM", this.GracefullyExit);
 
     EventBus.instance.register(
-      "http-server.listening",
+      Events.Http.Listening,
       this.onHttpServerListening
     );
     EventBus.instance.register(
-      "http-server.error-listening",
+      Events.Http.ErrorListening,
       this.onHttpServerListeningError
     );
 
-    EventBus.instance.register(
-      "p2p-server.listening",
-      this.onP2PServerListening
-    );
+    EventBus.instance.register(Events.P2P.Listening, this.onP2PServerListening);
 
-    EventBus.instance.register("p2p-server.error", this.onP2PServerError);
+    EventBus.instance.register(Events.P2P.Error, this.onP2PServerError);
+
+    EventBus.instance.register(
+      Events.BlockchainManager.BlockGenerated,
+      this.onBlockchainManagerBlockGenerated
+    );
 
     await this.httpServer.listen();
     P2PServer.start(this.p2pPort);
+  }
+
+  private onBlockchainManagerBlockGenerated(block: Block) {
+    // TODO: Refactor P2P to broadcast block received in argument
+    P2PServer.broadcastLatestBlock(block);
   }
 
   private onHttpServerListening(port: number) {
@@ -98,7 +107,7 @@ export class Application {
 
     try {
       await AddressManager.instance.saveLocally();
-      await BlockchainManager.saveLocally();
+      await BlockchainManager.instance.saveLocally();
 
       process.exit(0);
     } catch (err) {
