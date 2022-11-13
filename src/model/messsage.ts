@@ -1,6 +1,6 @@
-import { MessageType } from "./message_type";
+import { MessageType } from './message_type';
 
 export interface Message {
   type: MessageType;
-  data: any;
+  data?: any;
 }
