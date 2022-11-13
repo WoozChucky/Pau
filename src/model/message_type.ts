@@ -4,4 +4,5 @@ export enum MessageType {
   RESPONSE_BLOCKCHAIN = 2,
   QUERY_PEERS = 3,
   RESPONSE_PEERS = 4,
+  KEEP_ALIVE = 5,
 }

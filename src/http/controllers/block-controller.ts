@@ -1,9 +1,9 @@
-import { NextFunction, Request, Response } from "express";
-import { Get, Route, Tags, Post, Body, Path } from "tsoa";
+import { NextFunction, Request, Response } from 'express';
+import { Get, Route, Tags, Post, Body, Path } from 'tsoa';
 
-import { BlockchainManager } from "../../blockchain/blockchain-manager";
-import { P2PServer } from "../../p2p/p2p-server";
-import { Block } from "../../model/block";
+import { BlockchainManager } from '../../blockchain/blockchain-manager';
+import { P2PServer } from '../../p2p/p2p-server';
+import { Block } from '../../model/block';
 
 /**
  * Gets the entire chain
@@ -30,11 +30,7 @@ const getAll = async (req: Request, res: Response, next: NextFunction) => {
  * @param res {Response} The express Response object.
  * @param next {NextFunction} Execute the next middleware method.
  */
-const getOneByHash = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const getOneByHash = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const block = await BlockchainManager.instance.getBlock(req.params.hash);
     res.json(block);
@@ -52,7 +48,7 @@ const getOneByHash = async (
  * @param next {NextFunction} Execute the next middleware method.
  */
 const broadcast = async (req: Request, res: Response, next: NextFunction) => {
-  P2PServer.broadcastBlockchain();
+  await P2PServer.instance.broadcastBlockchain();
 
   res.json({ success: true });
 };
@@ -65,14 +61,8 @@ const broadcast = async (req: Request, res: Response, next: NextFunction) => {
  * @param res {Response} The express Response object.
  * @param next {NextFunction} Execute the next middleware method.
  */
-const generateBlock = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const block = await BlockchainManager.instance.generateNextBlock(
-    req.body.data
-  );
+const generateBlock = async (req: Request, res: Response, next: NextFunction) => {
+  const block = await BlockchainManager.instance.generateNextBlock(req.body.data);
 
   res.json(block);
 };

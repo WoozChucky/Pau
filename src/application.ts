@@ -18,14 +18,9 @@ export class Application {
   private readonly useAddress: boolean;
 
   private httpServer: HttpServer | null = null;
+  private p2pServer: P2PServer | null = null;
 
-  constructor(
-    httpPort: number,
-    p2pPort: number,
-    name: string,
-    dataLocation: string,
-    useAddress: boolean
-  ) {
+  constructor(httpPort: number, p2pPort: number, name: string, dataLocation: string, useAddress: boolean) {
     this.httpPort = httpPort;
     this.p2pPort = p2pPort;
     this.name = name;
@@ -64,16 +59,17 @@ export class Application {
     EventBus.instance.register(Events.P2P.Listening, this.onP2PServerListening);
     EventBus.instance.register(Events.P2P.Error, this.onP2PServerError);
 
-    EventBus.instance.register(Events.BlockchainManager.BlockGenerated, this.onBlockchainManagerBlockGenerated);
+    EventBus.instance.register(Events.BlockchainManager.BlockGenerated, async (block: Block) =>{
+      await this.onBlockchainManagerBlockGenerated(block);
+    });
     /* eslint-enable */
 
     await this.httpServer.listen();
     P2PServer.instance.start(this.p2pPort);
   }
 
-  private onBlockchainManagerBlockGenerated(block: Block) {
-    // TODO: Refactor P2P to broadcast block received in argument
-    P2PServer.broadcastLatestBlock(block);
+  private async onBlockchainManagerBlockGenerated(block: Block) {
+    await P2PServer.instance.broadcastLatestBlock(block);
   }
 
   private onHttpServerListening(port: number) {
@@ -95,10 +91,7 @@ export class Application {
   }
 
   private onP2PServerError(arg: P2PServerError) {
-    Logger.error(
-      `P2P Port ${arg.port} is already in use! ${arg.error.message}`,
-      arg.error
-    );
+    Logger.error(`P2P Port ${arg.port} is already in use! ${arg.error.message}`, arg.error);
     process.exit(1);
   }
 
