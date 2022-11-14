@@ -1,12 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import * as dotenv from 'dotenv';
+
 import { ArgumentParser } from 'argparse';
 
 import { Application } from './application';
-import { Logger } from './utils/logging';
 import { Settings } from './config';
-
-dotenv.config();
+import { Logger } from './utils/logging';
 
 // TODO: Move this out of here
 function getParsedArgument(arg: any) {

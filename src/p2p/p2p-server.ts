@@ -75,8 +75,9 @@ export class P2PServer {
     setInterval(this.askPeers.bind(this), ASK_PEERS_TIMEOUT);
     setInterval(this.askLatestBlockFromPeers.bind(this), ASK_PEERS_TIMEOUT);
     setInterval(async () => {
-      Logger.debug('Connections:');
       const connections = await this.getConnections();
+      if (connections.length <= 0) return;
+      Logger.debug('Connections:');
       for (const connection of connections) {
         Logger.debug(`${connection.type} ${connection.address}`);
       }
