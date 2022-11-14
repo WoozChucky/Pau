@@ -2,5 +2,5 @@
   "watch": ["src"],
   "ext": ".ts,.js",
   "ignore": [],
-  "exec": "ts-node ./src/app.ts -n master"
+  "exec": "set DATA_FOLDER=data&&ts-node ./src/app.ts -n master -host localhost"
 }

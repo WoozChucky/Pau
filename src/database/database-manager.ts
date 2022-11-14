@@ -1,9 +1,9 @@
-import levelup, { LevelUp } from "levelup";
-import leveldown, { LevelDown } from "leveldown";
+import levelup, { LevelUp } from 'levelup';
+import leveldown, { LevelDown } from 'leveldown';
 
 export class Database {
-  public static BLOCKCHAIN_KEY = "blockchain_key";
-  public static ADDRESS_LIST_KEY = "address_list_key";
+  public static BLOCKCHAIN_KEY = 'blockchain_key';
+  public static ADDRESS_LIST_KEY = 'address_list_key';
 
   private static singletonInstance: Database;
 
@@ -11,7 +11,9 @@ export class Database {
 
   private initialized = false;
 
-  private constructor() {}
+  private constructor() {
+    // empty on purpose
+  }
 
   public static get instance(): Database {
     if (!Database.singletonInstance) {
@@ -22,15 +24,15 @@ export class Database {
 
   public initialize(location: string): void {
     if (this.initialized) {
-      throw new Error("Database already initialized");
+      throw new Error('Database already initialized');
     }
 
     this.db = levelup(leveldown(location), {
       createIfMissing: true,
       errorIfExists: false,
       compression: true,
-      keyEncoding: "utf8",
-      valueEncoding: "utf8", // JSON also supported
+      keyEncoding: 'utf8',
+      valueEncoding: 'utf8', // JSON also supported
     });
 
     this.initialized = true;
@@ -56,7 +58,7 @@ export class Database {
 
   private checkDatabaseStatus(): void {
     if (!this.initialized) {
-      throw new Error("Database not initialized");
+      throw new Error('Database not initialized');
     }
   }
 }

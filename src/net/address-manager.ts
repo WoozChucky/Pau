@@ -7,6 +7,9 @@ import { FileSystem } from '../utils/filesystem';
 
 const mutex = new Mutex();
 
+// 10 minutes, in milliseconds
+const SAVE_TIMEOUT = 600000;
+
 export class AddressManager {
   private static singletonInstance: AddressManager;
 
@@ -16,11 +19,6 @@ export class AddressManager {
     }
     return AddressManager.singletonInstance;
   }
-
-  // 10 Minutes
-  private static SAVE_TIMEOUT = 600000;
-
-  private static DEFAULT_FILE_LOCATION = 'addr.txt';
 
   private static parseAddress(input: string): Address | null {
     const arr = input.split(':');
@@ -52,30 +50,14 @@ export class AddressManager {
 
     this.initialized = true;
 
-    if (useAddressFile) {
-      // Load from address file as well
-      const addresses = await FileSystem.readFromFile(
-        AddressManager.DEFAULT_FILE_LOCATION
-      );
-
-      for (const line of addresses) {
-        const addr = AddressManager.parseAddress(line);
-
-        if (addr) {
-          try {
-            await this.add(addr);
-            Logger.info(`Added address -> ${addr.endpoint}`, addr);
-          } catch (error) {
-            Logger.warn(error);
-          }
-        }
-      }
-    } else {
+    try {
       const addresses = await Database.instance.get(Database.ADDRESS_LIST_KEY);
       this.addresses = JSON.parse(addresses);
+    } catch (error) {
+      Logger.warn(`No addresses found in local db. ${error}`, error);
     }
 
-    setInterval(this.saveLocally, AddressManager.SAVE_TIMEOUT);
+    setInterval(this.saveLocally.bind(this), SAVE_TIMEOUT);
   }
 
   public async add(address: Address): Promise<void> {

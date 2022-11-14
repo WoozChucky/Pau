@@ -1,11 +1,11 @@
-import path from "path";
+import path from 'path';
 
-import { WinstonGraylog } from "@pskzcompany/winston-graylog";
-import { createLogger, transports, format } from "winston";
+import { WinstonGraylog } from '@pskzcompany/winston-graylog';
+import { createLogger, transports, format } from 'winston';
 // eslint-disable-next-line import/no-extraneous-dependencies
-import * as Transport from "winston-transport";
+import * as Transport from 'winston-transport';
 
-import { Settings } from "../config";
+import { Settings } from '../config';
 
 const logFormat = format.printf(({ timestamp, level, label, message }) => {
   return `[${timestamp}] ${level} [${label}]: ${message}`;
@@ -20,12 +20,12 @@ const buildTransports = (): Transport[] | Transport => {
     new transports.Console({
       format: consoleFormat,
       handleExceptions: true,
-      level: "debug",
+      level: 'debug',
     }),
     new transports.File({
-      filename: "logs/errors.log",
-      level: "error",
-      dirname: "logs",
+      filename: `errors.log`,
+      level: 'error',
+      dirname: `${Settings.DataFolder}/logs`,
       handleExceptions: true,
       format: fileFormatter,
       // 5MB
@@ -33,9 +33,9 @@ const buildTransports = (): Transport[] | Transport => {
       maxFiles: 5,
     }),
     new transports.File({
-      filename: "logs/warnings.log",
-      level: "warn",
-      dirname: "logs",
+      filename: `warnings.log`,
+      level: 'warn',
+      dirname: `${Settings.DataFolder}/logs`,
       handleExceptions: true,
       format: fileFormatter,
       // 5MB
@@ -43,9 +43,9 @@ const buildTransports = (): Transport[] | Transport => {
       maxFiles: 5,
     }),
     new transports.File({
-      filename: "logs/info.log",
-      level: "info",
-      dirname: "logs",
+      filename: `info.log`,
+      level: 'info',
+      dirname: `${Settings.DataFolder}/logs`,
       handleExceptions: true,
       format: fileFormatter,
       // 5MB
@@ -53,9 +53,9 @@ const buildTransports = (): Transport[] | Transport => {
       maxFiles: 5,
     }),
     new transports.File({
-      filename: "logs/debug.log",
-      level: "debug",
-      dirname: "logs",
+      filename: `debug.log`,
+      level: 'debug',
+      dirname: `${Settings.DataFolder}/logs`,
       handleExceptions: true,
       format: fileFormatter,
       // 5MB
@@ -68,7 +68,7 @@ const buildTransports = (): Transport[] | Transport => {
     trxs.push(
       new WinstonGraylog({
         format: fileFormatter,
-        level: "debug",
+        level: 'debug',
         graylog: Settings.GraylogHost,
         handleExceptions: true,
         defaultMeta: {
@@ -85,10 +85,11 @@ const buildTransports = (): Transport[] | Transport => {
 export const Logger = createLogger({
   exitOnError: false,
   format: format.combine(
-    format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+    format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    // eslint-disable-next-line max-len
     // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain,@typescript-eslint/no-non-null-assertion
     format.label({ label: path.basename(require.main?.filename!) }),
-    format.metadata({ fillExcept: ["message", "level", "timestamp", "label"] }),
+    format.metadata({ fillExcept: ['message', 'level', 'timestamp', 'label'] }),
     format.printf(({ timestamp, level, label, message }) => {
       return `[${timestamp}] ${level} [${label}]: ${message}`;
     })

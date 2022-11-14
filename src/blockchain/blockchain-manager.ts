@@ -1,12 +1,12 @@
-import { Mutex } from "async-mutex";
-import * as CryptoJS from "crypto-js";
+import { Mutex } from 'async-mutex';
+import * as CryptoJS from 'crypto-js';
 
-import { Block } from "../model/block";
-import { Database } from "../database/database-manager";
-import { Logger } from "../utils/logging";
-import { hexToBinary } from "../utils/converter";
-import { EventBus } from "../events/event-bus";
-import { Events } from "../events/events";
+import { Block } from '../model/block';
+import { Database } from '../database/database-manager';
+import { Logger } from '../utils/logging';
+import { hexToBinary } from '../utils/converter';
+import { EventBus } from '../events/event-bus';
+import { Events } from '../events/events';
 
 export type Blockchain = Block[];
 
@@ -82,7 +82,7 @@ export class BlockchainManager {
     difficulty: number
   ): boolean {
     const hashInBinary: string = hexToBinary(hash);
-    const requiredPrefix: string = "0".repeat(difficulty);
+    const requiredPrefix: string = '0'.repeat(difficulty);
     return hashInBinary.startsWith(requiredPrefix);
   }
 
@@ -101,13 +101,13 @@ export class BlockchainManager {
 
   private static isValidNewBlock(newBlock: Block, previousBlock: Block) {
     if (previousBlock.index + 1 !== newBlock.index) {
-      Logger.warn("invalid index");
+      Logger.warn('invalid index');
       return false;
     } else if (previousBlock.hash !== newBlock.previousHash) {
-      Logger.warn("invalid previous hash");
+      Logger.warn('invalid previous hash');
       return false;
     } else if (!BlockchainManager.isValidTimestamp(newBlock, previousBlock)) {
-      Logger.warn("invalid timestamp");
+      Logger.warn('invalid timestamp');
       return false;
     } else if (!BlockchainManager.hasValidHash(newBlock)) {
       return false;
@@ -117,23 +117,23 @@ export class BlockchainManager {
 
   private static getGenesisChain(): Blockchain {
     const genesisTransaction: object = {
-      txIns: [{ signature: "", txOutId: "", txOutIndex: 0 }],
+      txIns: [{ signature: '', txOutId: '', txOutIndex: 0 }],
       txOuts: [
         {
           address:
-            "04bfcab8722991ae774db48f934ca79cfb7dd991229153b9f732ba5334aafcd8e7266e47076996b55a14bf9913ee3145ce0cfc1372ada8ada74bd287450313534a",
+            '04bfcab8722991ae774db48f934ca79cfb7dd991229153b9f732ba5334aafcd8e7266e47076996b55a14bf9913ee3145ce0cfc1372ada8ada74bd287450313534a',
           amount: 50,
         },
       ],
-      id: "e655f6a5f26dc9b4cac6e46f52336428287759cf81ef5ff10854f69d68f43fa3",
+      id: 'e655f6a5f26dc9b4cac6e46f52336428287759cf81ef5ff10854f69d68f43fa3',
     };
 
     const genesisBlock: Block = {
       index: 0,
       timestamp: 1465154705,
-      previousHash: "",
+      previousHash: '',
       data: [genesisTransaction],
-      hash: "91a73664bc84c0baa1fc75ea6e4aa6d1d20c5df664c724e3159aefc2e1186627",
+      hash: '91a73664bc84c0baa1fc75ea6e4aa6d1d20c5df664c724e3159aefc2e1186627',
       difficulty: 0,
       nonce: 0,
     };
@@ -151,7 +151,7 @@ export class BlockchainManager {
 
   public async initialize(): Promise<void> {
     if (this.initialized) {
-      throw new Error("BlockchainManager is already initialized.");
+      throw new Error('BlockchainManager is already initialized.');
     }
 
     const unlock = await mutex.acquire();
@@ -161,7 +161,7 @@ export class BlockchainManager {
       this.chain = JSON.parse(chain);
     } catch (error) {
       Logger.warn(
-        "Error loading blockchain from local database. Using genesis block.",
+        'Error loading blockchain from local database. Using genesis block.',
         error
       );
 
@@ -172,12 +172,12 @@ export class BlockchainManager {
 
     unlock();
 
-    setInterval(this.saveLocally, SAVE_TIMEOUT);
+    setInterval(this.saveLocally.bind(this), SAVE_TIMEOUT);
   }
 
   public async getChain(): Promise<Blockchain> {
     if (!this.initialized) {
-      throw new Error("BlockchainManager is not initialized.");
+      throw new Error('BlockchainManager is not initialized.');
     }
 
     const unlock = await mutex.acquire();
@@ -191,7 +191,7 @@ export class BlockchainManager {
 
   public async getLatestBlock(): Promise<Block> {
     if (!this.initialized) {
-      throw new Error("BlockchainManager is not initialized.");
+      throw new Error('BlockchainManager is not initialized.');
     }
 
     const unlock = await mutex.acquire();
@@ -203,7 +203,7 @@ export class BlockchainManager {
     const block = chain[chain.length - 1];
 
     if (!block) {
-      throw new Error("Block not found");
+      throw new Error('Block not found');
     }
 
     return block;
@@ -211,7 +211,7 @@ export class BlockchainManager {
 
   public async getBlock(hash: string): Promise<Block> {
     if (!this.initialized) {
-      throw new Error("BlockchainManager is not initialized.");
+      throw new Error('BlockchainManager is not initialized.');
     }
 
     const unlock = await mutex.acquire();
@@ -223,7 +223,7 @@ export class BlockchainManager {
     const block = chain.find((block: Block) => block.hash === hash);
 
     if (!block) {
-      throw new Error("Block not found");
+      throw new Error('Block not found');
     }
 
     return block;
@@ -231,7 +231,7 @@ export class BlockchainManager {
 
   public async addBlock(block: Block): Promise<boolean> {
     if (!this.initialized) {
-      throw new Error("BlockchainManager is not initialized.");
+      throw new Error('BlockchainManager is not initialized.');
     }
 
     const latestBlock = await this.getLatestBlock();
@@ -247,7 +247,7 @@ export class BlockchainManager {
 
   public async saveLocally(): Promise<void> {
     if (!this.initialized) {
-      throw new Error("BlockchainManager is not initialized.");
+      throw new Error('BlockchainManager is not initialized.');
     }
 
     const unlock = await mutex.acquire();
@@ -258,12 +258,12 @@ export class BlockchainManager {
 
     await Database.instance.put(Database.BLOCKCHAIN_KEY, JSON.stringify(chain));
 
-    Logger.info("Safely written blockchain database.");
+    Logger.info('Safely written blockchain database.');
   }
 
   public async replaceChain(newChain: Blockchain) {
     if (!this.initialized) {
-      throw new Error("BlockchainManager is not initialized.");
+      throw new Error('BlockchainManager is not initialized.');
     }
     const unlock = await mutex.acquire();
 
@@ -291,7 +291,7 @@ export class BlockchainManager {
     const added = await this.addBlock(newBlock);
 
     if (!added) {
-      throw new Error("Failed generate block");
+      throw new Error('Failed generate block');
     }
 
     EventBus.instance.dispatch<Block>(

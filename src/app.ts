@@ -1,84 +1,68 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import * as dotenv from "dotenv";
-import { ArgumentParser } from "argparse";
+import * as dotenv from 'dotenv';
+import { ArgumentParser } from 'argparse';
 
-import { Application } from "./application";
-import { Logger } from "./utils/logging";
+import { Application } from './application';
+import { Logger } from './utils/logging';
+import { Settings } from './config';
 
 dotenv.config();
 
+// TODO: Move this out of here
+function getParsedArgument(arg: any) {
+  if (Array.isArray(arg)) {
+    return arg[0];
+  } else {
+    return arg;
+  }
+}
+
 const argParser = new ArgumentParser({
   add_help: true,
-  description: "Description",
+  description: 'Description',
   exit_on_error: true,
 });
 
-argParser.add_argument("-p2p", "--p2p-port", {
-  default: 6000,
-  type: "int",
-  nargs: 1,
-  dest: "P2P_PORT",
-  help: "--p2p-port 6000",
-  metavar: "<P2P_PORT>",
-  required: false,
-});
-
-argParser.add_argument("-http", "--http-port", {
-  help: "--http-port 3000",
-  type: "int",
-  default: 3000,
-  required: false,
-  nargs: 1,
-  dest: "HTTP_PORT",
-  metavar: "<HTTP_PORT>",
-});
-
-argParser.add_argument("-d", "--data-folder", {
-  help: "--data-folder dist/data",
-  type: "str",
-  default: "dist/data",
-  nargs: 1,
-  dest: "DATA",
-  metavar: "<DATA>",
-});
-
-argParser.add_argument("-n", "--name", {
-  help: "--name node1",
-  type: "str",
+argParser.add_argument('-n', '--name', {
+  help: '--name node1',
+  type: 'str',
   required: true,
   nargs: 1,
-  dest: "NAME",
-  metavar: "<NAME>",
+  dest: 'name',
+  metavar: '<NAME>',
 });
 
-argParser.add_argument("-a", "--addresses", {
-  help: "1 | 0",
-  type: "int",
-  default: 0,
+argParser.add_argument('-host', '--hostname', {
+  help: '--hostname 0.0.0.0',
+  default: '0.0.0.0',
+  type: 'str',
+  required: false,
   nargs: 1,
-  dest: "USE_FILE",
-  metavar: "<USE_FILE>",
+  dest: 'hostname',
+  metavar: '<HOSTNAME>',
+});
+
+argParser.add_argument('-p', '--port', {
+  default: 3000,
+  type: 'int',
+  nargs: 1,
+  dest: 'port',
+  help: '--port 3000',
+  metavar: '<PORT>',
+  required: false,
 });
 
 const parsedArgs = argParser.parse_args();
 
-Logger.info("Parsed Arguments: ", parsedArgs);
+Logger.info(`Parsed Arguments: ${parsedArgs}`, parsedArgs);
 
-const httpPort = parsedArgs.HTTP_PORT;
-const p2pPort = parsedArgs.P2P_PORT;
-const dataFolder = parsedArgs.DATA;
-const name = parsedArgs.NAME[0];
-const useAddress = parsedArgs.USE_FILE === 1;
+const hostname = getParsedArgument(parsedArgs.hostname);
+const port = getParsedArgument(parsedArgs.port);
+const name = getParsedArgument(parsedArgs.name);
 
-const appInstance = new Application(
-  httpPort,
-  p2pPort,
-  name,
-  dataFolder,
-  useAddress
-);
+const appInstance = new Application(port, name, Settings.DataFolder, hostname);
 
 appInstance
   .initialize()
   .then(() => Logger.info(`Node ${name} UP and running...`))
-  .catch(() => Logger.error(`Node ${name} failed to start`));
+  .catch((err) => Logger.error(`Node ${name} failed to start. ${err}`));

@@ -2,7 +2,6 @@
 export namespace Events {
   export namespace Http {
     export const Listening = 'http-server.listening';
-    export const ErrorListening = 'http-server.error-listening';
     export const Error = 'http-server.error';
   }
 

@@ -1,10 +1,15 @@
+import { Server } from 'http';
+
 import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { Mutex } from 'async-mutex';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Message } from '../model/messsage';
 import { MessageType } from '../model/message_type';
-import { Blockchain, BlockchainManager } from '../blockchain/blockchain-manager';
+import {
+  Blockchain,
+  BlockchainManager,
+} from '../blockchain/blockchain-manager';
 import { Logger } from '../utils/logging';
 import { AddressManager } from '../net/address-manager';
 import { Block } from '../model/block';
@@ -13,11 +18,6 @@ import { EventBus } from '../events/event-bus';
 import { Events } from '../events/events';
 
 import { P2PConnection } from './p2p-connection';
-
-export interface P2PServerError {
-  port: number;
-  error: Error;
-}
 
 // 10 Minutes, in milliseconds
 const ASK_PEERS_TIMEOUT = 600000;
@@ -47,7 +47,6 @@ export class P2PServer {
     }
   }
 
-  private port = 0;
   private connections: P2PConnection[] = [];
 
   private server: WebSocketServer | null = null;
@@ -58,13 +57,12 @@ export class P2PServer {
     // empty on purpose
   }
 
-  public start(port: number): void {
+  public configure(server: Server): void {
     if (this.initialized) {
       throw new Error('P2PServer is already initialized.');
     }
 
-    this.port = port;
-    this.server = new WebSocketServer({ port });
+    this.server = new WebSocketServer({ server });
 
     this.server.on('listening', this.onServerListening.bind(this));
     this.server.on('error', this.onServerError.bind(this));
@@ -73,7 +71,9 @@ export class P2PServer {
     });
 
     // setInterval(P2PServer.askPeers.bind(P2PServer), P2PServer.ASK_PEERS_TIMEOUT);
-    setInterval(this.askLatestBlockFromPeers, ASK_PEERS_TIMEOUT);
+    setInterval(this.askLatestBlockFromPeers.bind(this), ASK_PEERS_TIMEOUT);
+
+    this.initialized = true;
   }
 
   public async connectToPeer(endpoint: string): Promise<void> {
@@ -90,7 +90,9 @@ export class P2PServer {
 
     const connections = await this.getConnections();
 
-    const existingClient = connections.find((client: P2PConnection) => client.socket.url === endpoint);
+    const existingClient = connections.find(
+      (client: P2PConnection) => client.socket.url === endpoint
+    );
 
     if (!existingClient) {
       await this.handleNewOutgoingConnection(new WebSocket(endpoint));
@@ -103,7 +105,10 @@ export class P2PServer {
       return;
     }
 
-    if (existingClient.lastTransaction < Date.now() - CLIENT_LAST_TRANSACTION_TIMEOUT) {
+    if (
+      existingClient.lastTransaction <
+      Date.now() - CLIENT_LAST_TRANSACTION_TIMEOUT
+    ) {
       existingClient.write({ type: MessageType.KEEP_ALIVE });
       return;
     }
@@ -139,7 +144,9 @@ export class P2PServer {
       connection.write({ type: MessageType.QUERY_PEERS });
     } else {
       const connections = await this.getConnections();
-      connections.forEach((conn: P2PConnection) => conn.write({ type: MessageType.QUERY_PEERS }));
+      connections.forEach((conn: P2PConnection) =>
+        conn.write({ type: MessageType.QUERY_PEERS })
+      );
     }
   }
 
@@ -149,7 +156,10 @@ export class P2PServer {
     }
 
     const chain = await BlockchainManager.instance.getChain();
-    await this.broadcast({ type: MessageType.RESPONSE_BLOCKCHAIN, data: chain });
+    await this.broadcast({
+      type: MessageType.RESPONSE_BLOCKCHAIN,
+      data: chain,
+    });
   }
 
   public async broadcastLatestBlock(block: Block | null = null) {
@@ -178,10 +188,12 @@ export class P2PServer {
 
     // const outgoingConnections = connections.filter((connection: P2PConnection) => connection.type === 'OUTGOING');
 
-    const incomingConnections = connections.filter((connection: P2PConnection) => connection.type === 'INCOMING');
+    const incomingConnections = connections.filter(
+      (connection: P2PConnection) => connection.type === 'INCOMING'
+    );
 
     const existingConnection = incomingConnections.find(
-      (connection: P2PConnection) => connection.socket.url === socket.url,
+      (connection: P2PConnection) => connection.socket.url === socket.url
     );
 
     if (!existingConnection) {
@@ -196,14 +208,11 @@ export class P2PServer {
   }
 
   private onServerError(error: Error) {
-    EventBus.instance.dispatch<P2PServerError>(Events.P2P.Error, {
-      port: this.port,
-      error,
-    });
+    EventBus.instance.dispatch(Events.P2P.Error, error);
   }
 
   private onServerListening() {
-    EventBus.instance.dispatch<number>(Events.P2P.Listening, this.port);
+    EventBus.instance.dispatch(Events.P2P.Listening);
 
     // Load all address 10 seconds after booting the p2p server
     setTimeout(async () => {
@@ -220,7 +229,9 @@ export class P2PServer {
   private async removeConnection(connection: P2PConnection) {
     const connections = await this.getConnections();
 
-    const existingConnection = connections.find((conn: P2PConnection) => conn.id === connection.id);
+    const existingConnection = connections.find(
+      (conn: P2PConnection) => conn.id === connection.id
+    );
 
     if (!existingConnection) {
       Logger.warn('Connection was not found in connection list', connection);
@@ -254,18 +265,26 @@ export class P2PServer {
       switch (message.type) {
         case MessageType.QUERY_LATEST_BLOCK: {
           const latestBlock = await BlockchainManager.instance.getLatestBlock();
-          connection.write({ type: MessageType.RESPONSE_BLOCKCHAIN, data: [latestBlock] });
+          connection.write({
+            type: MessageType.RESPONSE_BLOCKCHAIN,
+            data: [latestBlock],
+          });
           break;
         }
 
         case MessageType.QUERY_ALL_BLOCKS: {
           const chain = await BlockchainManager.instance.getChain();
-          connection.write({ type: MessageType.RESPONSE_BLOCKCHAIN, data: [chain] });
+          connection.write({
+            type: MessageType.RESPONSE_BLOCKCHAIN,
+            data: [chain],
+          });
           break;
         }
 
         case MessageType.RESPONSE_BLOCKCHAIN: {
-          const receivedChain = P2PServer.JSONtoObject<Blockchain>(message.data);
+          const receivedChain = P2PServer.JSONtoObject<Blockchain>(
+            message.data
+          );
 
           if (!receivedChain) {
             Logger.warn('Invalid blockchain received ', message.data);
@@ -293,7 +312,9 @@ export class P2PServer {
           break;
 
         case MessageType.RESPONSE_PEERS: {
-          const receivedPeers: string[] | null = P2PServer.JSONtoObject<string[]>(message.data);
+          const receivedPeers: string[] | null = P2PServer.JSONtoObject<
+            string[]
+          >(message.data);
 
           receivedPeers?.forEach((peer) => {
             Logger.info('Connecting to peer: ', peer);
@@ -322,30 +343,7 @@ export class P2PServer {
       },
     };
 
-    // Add the connection to the list
-    const unlock = await mutex.acquire();
-    this.connections.push(newConnection);
-    unlock();
-
-    newConnection.socket.on('message', async (data: RawData) => {
-      newConnection.lastTransaction = Date.now();
-      await this.onClientMessage(newConnection, data);
-    });
-
-    newConnection.socket.on('close', async (code: number, reason: Buffer) => {
-      Logger.info(`Connection lost to peer. ${code} - ${reason.toString()}`);
-      await this.removeConnection(newConnection);
-    });
-
-    newConnection.socket.on('error', async (error: Error) => {
-      Logger.warn(`Connection closed abruptly to peer`, error);
-      await this.removeConnection(newConnection);
-    });
-
-    // Query new connection's latest block
-    newConnection.write({
-      type: MessageType.QUERY_LATEST_BLOCK,
-    });
+    await this.handleNewConnection(newConnection);
   }
 
   private async handleNewOutgoingConnection(socket: WebSocket) {
@@ -361,29 +359,32 @@ export class P2PServer {
         newConnection.lastTransaction = Date.now();
       },
     };
+    await this.handleNewConnection(newConnection);
+  }
 
+  private async handleNewConnection(connection: P2PConnection) {
     // Add the connection to the list
     const unlock = await mutex.acquire();
-    this.connections.push(newConnection);
+    this.connections.push(connection);
     unlock();
 
-    newConnection.socket.on('message', async (data: RawData) => {
-      newConnection.lastTransaction = Date.now();
-      await this.onClientMessage(newConnection, data);
+    connection.socket.on('message', async (data: RawData) => {
+      connection.lastTransaction = Date.now();
+      await this.onClientMessage(connection, data);
     });
 
-    newConnection.socket.on('close', async (code: number, reason: Buffer) => {
+    connection.socket.on('close', async (code: number, reason: Buffer) => {
       Logger.info(`Connection lost to peer. ${code} - ${reason.toString()}`);
-      await this.removeConnection(newConnection);
+      await this.removeConnection(connection);
     });
 
-    newConnection.socket.on('error', async (error: Error) => {
+    connection.socket.on('error', async (error: Error) => {
       Logger.warn(`Connection closed abruptly to peer`, error);
-      await this.removeConnection(newConnection);
+      await this.removeConnection(connection);
     });
 
     // Query new connection's latest block
-    newConnection.write({
+    connection.write({
       type: MessageType.QUERY_LATEST_BLOCK,
     });
   }
@@ -395,7 +396,9 @@ export class P2PServer {
 
     const connections = await this.getConnections();
 
-    const connection = connections.find((conn: P2PConnection) => conn.socket.url === endpoint);
+    const connection = connections.find(
+      (conn: P2PConnection) => conn.socket.url === endpoint
+    );
 
     if (!connection && throwOnFailure) {
       throw new Error(`Connection with endpoint (${endpoint}) not found`);
@@ -418,10 +421,15 @@ export class P2PServer {
     }
 
     const connections = await this.getConnections();
-    connections.forEach((connection: P2PConnection) => connection.write(message));
+    connections.forEach((connection: P2PConnection) =>
+      connection.write(message)
+    );
   }
 
-  private async handleBlockchainResponse(connection: P2PConnection, receivedChain: Blockchain) {
+  private async handleBlockchainResponse(
+    connection: P2PConnection,
+    receivedChain: Blockchain
+  ) {
     if (!this.initialized) {
       throw new Error('P2PServer is not initialized.');
     }
@@ -435,21 +443,28 @@ export class P2PServer {
     const latestBlockHeld = await BlockchainManager.instance.getLatestBlock();
 
     if (latestBlockReceived.index <= latestBlockHeld.index) {
-      Logger.info('Received blockchain is not longer than received blockchain. Do nothing');
+      Logger.info(
+        'Received blockchain is not longer than received blockchain. Do nothing'
+      );
       return;
     }
 
     Logger.info(
       `Blockchain possibly behind. 
       We got block index: ${latestBlockHeld.index} 
-      Peer got block index: ${latestBlockReceived.index}`,
+      Peer got block index: ${latestBlockReceived.index}`
     );
 
     if (latestBlockHeld.hash === latestBlockReceived.previousHash) {
       // current hash = peer's latest block previous hash, simply add missing block
-      const addedBlock = await BlockchainManager.instance.addBlock(latestBlockReceived);
+      const addedBlock = await BlockchainManager.instance.addBlock(
+        latestBlockReceived
+      );
       if (addedBlock) {
-        Logger.info(`Adding missing block ${latestBlockReceived.index}`, latestBlockReceived);
+        Logger.info(
+          `Adding missing block ${latestBlockReceived.index}`,
+          latestBlockReceived
+        );
         await this.broadcast({
           type: MessageType.RESPONSE_BLOCKCHAIN,
           data: [latestBlockReceived],
@@ -465,7 +480,10 @@ export class P2PServer {
       Logger.info('Received blockchain is longer than current blockchain');
       await BlockchainManager.instance.replaceChain(receivedChain);
       Logger.info('Replaced blockchain with received one.');
-      await this.broadcast({ type: MessageType.RESPONSE_BLOCKCHAIN, data: receivedChain });
+      await this.broadcast({
+        type: MessageType.RESPONSE_BLOCKCHAIN,
+        data: receivedChain,
+      });
     }
   }
 }

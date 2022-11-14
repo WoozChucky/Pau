@@ -1,4 +1,5 @@
-import { EventEmitter } from 'events';
+import * as http from 'http';
+import { Server } from 'http';
 
 import swaggerUi from 'swagger-ui-express';
 import express, { Express } from 'express';
@@ -7,8 +8,6 @@ import cookieParser from 'cookie-parser';
 import csrf from 'csurf';
 import helmet from 'helmet';
 
-import { isPortTaken } from '../utils/http';
-import { Logger } from '../utils/logging';
 import { EventBus } from '../events/event-bus';
 import { Events } from '../events/events';
 
@@ -25,9 +24,9 @@ import { WalletRouter } from './routes/wallet-route';
  * @class HttpServer
  */
 export class HttpServer {
-  private app: Express;
+  private readonly app: Express;
+  private readonly server: Server;
   private readonly router: express.Router;
-  private readonly httpPort: number;
 
   /**
    * Constructor.
@@ -35,11 +34,12 @@ export class HttpServer {
    * @class Server
    * @constructor
    */
-  constructor(port: number) {
-    this.httpPort = port;
-
+  constructor() {
     // create express js application
     this.app = express();
+
+    // create server
+    this.server = http.createServer(this.app);
 
     this.router = express.Router();
 
@@ -49,39 +49,20 @@ export class HttpServer {
     // add routes
     this.routes();
 
-    // add api
-    this.api();
+    this.server.on('listening', this.onServerListening.bind(this));
+    this.server.on('error', this.onServerError.bind(this));
   }
 
-  public async listen(): Promise<void> {
-    try {
-      const notTaken = await isPortTaken(this.httpPort);
-
-      if (notTaken) {
-        this.app.listen(this.httpPort);
-        EventBus.instance.dispatch<number>(
-          Events.Http.Listening,
-          this.httpPort
-        );
-      } else {
-        EventBus.instance.dispatch<number>(
-          Events.Http.ErrorListening,
-          this.httpPort
-        );
-      }
-    } catch (err) {
-      EventBus.instance.dispatch<unknown>(Events.Http.Error, err);
-    }
+  public get handle(): Server {
+    return this.server;
   }
 
-  /**
-   * Create REST API routes
-   *
-   * @class Server
-   * @method api
-   */
-  private api(): void {
-    Logger.info('TODO: Create Rest API calls, or remote method');
+  private onServerListening() {
+    EventBus.instance.dispatch<number>(Events.Http.Listening);
+  }
+
+  private onServerError(error: Error) {
+    EventBus.instance.dispatch(Events.Http.Error, error);
   }
 
   /**
@@ -93,9 +74,13 @@ export class HttpServer {
   private config(): void {
     this.app.disable('x-powered-by');
 
-    this.app.set('json spaces', 2);
-
     this.app.set('trust proxy', 1);
+
+    // use json form parser middleware
+    this.app.use(express.json());
+
+    // use query string parser middleware
+    this.app.use(express.urlencoded({ extended: true }));
 
     this.app.use(helmet());
 
@@ -105,12 +90,6 @@ export class HttpServer {
     this.app.use(cookieParser());
 
     this.app.use(csrf({ cookie: true }));
-
-    // use json form parser middleware
-    this.app.use(express.json());
-
-    // use query string parser middleware
-    this.app.use(express.urlencoded({ extended: true }));
 
     this.app.use(express.static('public'));
 
@@ -138,7 +117,6 @@ export class HttpServer {
           } - ${req.ip}`
         );
         */
-      console.log('error middlware');
       // res.status(err.status || 500);
       next();
     });

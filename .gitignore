@@ -16,3 +16,11 @@ dist/
 /public/swagger.json
 
 .env
+
+/data/
+/data1/
+/data2/
+/data3/
+/data4/
+
+data2 /logs/
