@@ -20,7 +20,7 @@ import { Events } from '../events/events';
 import { P2PConnection } from './p2p-connection';
 
 // 10 Minutes, in milliseconds
-const ASK_PEERS_TIMEOUT = 600000;
+const ASK_PEERS_TIMEOUT = 100000;
 // 10 Seconds, in milliseconds
 const LOAD_ADDRESSES_TIMER = 10000;
 // 60 seconds, in milliseconds
@@ -72,7 +72,7 @@ export class P2PServer {
       await this.onServerConnection(socket);
     });
 
-    // setInterval(P2PServer.askPeers.bind(P2PServer), P2PServer.ASK_PEERS_TIMEOUT);
+    setInterval(this.askPeers.bind(this), ASK_PEERS_TIMEOUT);
     setInterval(this.askLatestBlockFromPeers.bind(this), ASK_PEERS_TIMEOUT);
     setInterval(async () => {
       Logger.debug('Connections:');
@@ -95,12 +95,17 @@ export class P2PServer {
      * TODO Check connected sockets and stop if already connected
      */
 
+    if (endpoint === this.ownAddress()) {
+      Logger.warn('Connecting to the current node is not allowed.');
+      return;
+    }
+
     Logger.info(`Connecting to peer -> ${endpoint}`);
 
     const connections = await this.getConnections();
 
     const existingClient = connections.find(
-      (client: P2PConnection) => client.socket.url === endpoint
+      (connection: P2PConnection) => connection.address === endpoint
     );
 
     if (!existingClient) {
@@ -111,6 +116,7 @@ export class P2PServer {
 
     if (existingClient && !existingClient.connected) {
       // try to reconnect
+      Logger.error('Implement reconnect here');
       return;
     }
 
@@ -145,13 +151,16 @@ export class P2PServer {
       throw new Error('P2PServer is not initialized.');
     }
 
-    Logger.info(`Asking peers from connected socket (${endpoint})`);
+    Logger.info(`Asking peers from peer (${endpoint})`);
 
-    const connection = await this.getConnection(endpoint, true);
+    const connection = await this.getConnection(endpoint, false);
 
     if (connection) {
       connection.write({ type: MessageType.QUERY_PEERS });
     } else {
+      Logger.info(
+        `Peer (${endpoint}) not connected. Sending message to all peers`
+      );
       const connections = await this.getConnections();
       connections.forEach((conn: P2PConnection) =>
         conn.write({ type: MessageType.QUERY_PEERS })
@@ -195,14 +204,8 @@ export class P2PServer {
   private async onServerConnection(socket: WebSocket) {
     const connections = await this.getConnections();
 
-    // const outgoingConnections = connections.filter((connection: P2PConnection) => connection.type === 'OUTGOING');
-
-    const incomingConnections = connections.filter(
-      (connection: P2PConnection) => connection.type === 'INCOMING'
-    );
-
-    const existingConnection = incomingConnections.find(
-      (connection: P2PConnection) => connection.socket.url === socket.url
+    const existingConnection = connections.find(
+      (connection: P2PConnection) => connection.address === socket.url
     );
 
     if (!existingConnection) {
@@ -314,20 +317,49 @@ export class P2PServer {
 
             const sockets = addresses.map((addr: Address) => addr.endpoint);
 
+            const connections = await this.getConnections();
+            const addressList = connections.map((conn) => conn.address);
+
             connection.write({
               type: MessageType.RESPONSE_PEERS,
-              data: sockets,
+              data: addressList,
             });
           } catch (error) {
             Logger.warn('Could not retrieve addresses: ', error);
           }
           break;
 
+        case MessageType.QUERY_PEER_ADDRESS: {
+          connection.write({
+            type: MessageType.RESPONSE_PEER_ADDRESS,
+            data: `ws://${this.server?.options.host}:${this.port}`,
+          });
+          break;
+        }
+
+        case MessageType.RESPONSE_PEER_ADDRESS: {
+          const address: string = message.data;
+
+          const connections = await this.getConnections();
+
+          if (
+            connections.find((conn: P2PConnection) => conn.address === address)
+          ) {
+            // connection already exists, dropping it now
+            connection.socket.close();
+            Logger.debug('Dropping already existing connection');
+          } else {
+            // eslint-disable-next-line require-atomic-updates
+            connection.address = message.data;
+          }
+          break;
+        }
+
         case MessageType.RESPONSE_PEERS: {
           const receivedPeers: string[] = message.data;
 
           receivedPeers?.forEach((peer) => {
-            Logger.info('Connecting to peer: ', peer);
+            Logger.info(`Connecting to peer: ${peer}`);
             this.connectToPeer(peer);
           });
 
@@ -354,6 +386,11 @@ export class P2PServer {
         newConnection.lastTransaction = Date.now();
       },
     };
+
+    // Query new connection's real address
+    newConnection.write({
+      type: MessageType.QUERY_PEER_ADDRESS,
+    });
 
     await this.handleNewConnection(newConnection);
   }
@@ -414,7 +451,7 @@ export class P2PServer {
     const connections = await this.getConnections();
 
     const connection = connections.find(
-      (conn: P2PConnection) => conn.socket.url === endpoint
+      (conn: P2PConnection) => conn.address === endpoint
     );
 
     if (!connection && throwOnFailure) {
@@ -422,6 +459,10 @@ export class P2PServer {
     }
 
     return connection;
+  }
+
+  private ownAddress(): string {
+    return `ws://${this.server?.options.host}:${this.port}`;
   }
 
   private async askLatestBlockFromPeers() {

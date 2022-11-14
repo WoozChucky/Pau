@@ -17,7 +17,7 @@ const add = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 const ask = async (req: Request, res: Response, next: NextFunction) => {
-  const peer = req.params.peer || '';
+  const peer = req.body.peer || '';
 
   await P2PServer.instance.askPeers(peer);
 

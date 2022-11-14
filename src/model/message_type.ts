@@ -5,4 +5,6 @@ export enum MessageType {
   QUERY_PEERS = 3,
   RESPONSE_PEERS = 4,
   KEEP_ALIVE = 5,
+  QUERY_PEER_ADDRESS = 6,
+  RESPONSE_PEER_ADDRESS = 7,
 }
