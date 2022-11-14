@@ -68,9 +68,10 @@ export class Application {
       await this.onBlockchainManagerBlockGenerated(block);
     });
     /* eslint-enable */
-    P2PServer.instance.configure(this.server);
 
     this.server.listen(this.port, this.hostname);
+
+    P2PServer.instance.configure(this.server, this.hostname, this.port);
   }
 
   private async onBlockchainManagerBlockGenerated(block: Block) {

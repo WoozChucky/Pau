@@ -53,16 +53,18 @@ export class P2PServer {
 
   private initialized = false;
 
+  private port = 0;
+
   private constructor() {
     // empty on purpose
   }
 
-  public configure(server: Server): void {
+  public configure(server: Server, hostname: string, port: number): void {
     if (this.initialized) {
       throw new Error('P2PServer is already initialized.');
     }
-
-    this.server = new WebSocketServer({ server });
+    this.port = port;
+    this.server = new WebSocketServer({ server, host: hostname });
 
     this.server.on('listening', this.onServerListening.bind(this));
     this.server.on('error', this.onServerError.bind(this));
@@ -72,12 +74,19 @@ export class P2PServer {
 
     // setInterval(P2PServer.askPeers.bind(P2PServer), P2PServer.ASK_PEERS_TIMEOUT);
     setInterval(this.askLatestBlockFromPeers.bind(this), ASK_PEERS_TIMEOUT);
+    setInterval(async () => {
+      Logger.debug('Connections:');
+      const connections = await this.getConnections();
+      for (const connection of connections) {
+        Logger.debug(`${connection.type} ${connection.address}`);
+      }
+    }, 10000);
 
     this.initialized = true;
   }
 
   public async connectToPeer(endpoint: string): Promise<void> {
-    if (this.initialized) {
+    if (!this.initialized) {
       throw new Error('P2PServer is not initialized.');
     }
 
@@ -253,14 +262,19 @@ export class P2PServer {
     try {
       const message: Message | null = P2PServer.JSONtoObject<Message>(data);
       if (!message) {
-        Logger.warn('Could not parse received JSON message: ', data);
+        Logger.warn(`Could not parse received JSON message: ${data}`, data);
         return;
       }
 
-      Logger.info('Received p2p message:', {
-        connection,
-        message,
-      });
+      Logger.info(
+        `Received p2p(${connection.socket.url}) message: ${
+          MessageType[message.type]
+        }`,
+        {
+          connection,
+          message,
+        }
+      );
 
       switch (message.type) {
         case MessageType.QUERY_LATEST_BLOCK: {
@@ -276,15 +290,13 @@ export class P2PServer {
           const chain = await BlockchainManager.instance.getChain();
           connection.write({
             type: MessageType.RESPONSE_BLOCKCHAIN,
-            data: [chain],
+            data: chain,
           });
           break;
         }
 
         case MessageType.RESPONSE_BLOCKCHAIN: {
-          const receivedChain = P2PServer.JSONtoObject<Blockchain>(
-            message.data
-          );
+          const receivedChain: Blockchain = message.data;
 
           if (!receivedChain) {
             Logger.warn('Invalid blockchain received ', message.data);
@@ -312,9 +324,7 @@ export class P2PServer {
           break;
 
         case MessageType.RESPONSE_PEERS: {
-          const receivedPeers: string[] | null = P2PServer.JSONtoObject<
-            string[]
-          >(message.data);
+          const receivedPeers: string[] = message.data;
 
           receivedPeers?.forEach((peer) => {
             Logger.info('Connecting to peer: ', peer);
@@ -331,11 +341,13 @@ export class P2PServer {
 
   private async handleNewIncomingConnection(socket: WebSocket) {
     // new connection to be added from outside
+    Logger.info(`Connected to new incoming node at ${socket.url}`);
     const newConnection: P2PConnection = {
       id: uuidv4(),
       socket,
       type: 'INCOMING',
       connected: true,
+      address: socket.url,
       lastTransaction: Date.now(),
       write: (message) => {
         socket.send(JSON.stringify(message));
@@ -348,18 +360,22 @@ export class P2PServer {
 
   private async handleNewOutgoingConnection(socket: WebSocket) {
     // new connection to be added from outside
-    const newConnection: P2PConnection = {
-      id: uuidv4(),
-      socket,
-      type: 'OUTGOING',
-      connected: true,
-      lastTransaction: Date.now(),
-      write: (message) => {
-        socket.send(JSON.stringify(message));
-        newConnection.lastTransaction = Date.now();
-      },
-    };
-    await this.handleNewConnection(newConnection);
+    socket.on('open', async () => {
+      Logger.info(`Connected to new outgoing node at ${socket.url}`);
+      const newConnection: P2PConnection = {
+        id: uuidv4(),
+        socket,
+        type: 'OUTGOING',
+        connected: true,
+        address: socket.url,
+        lastTransaction: Date.now(),
+        write: (message) => {
+          socket.send(JSON.stringify(message));
+          newConnection.lastTransaction = Date.now();
+        },
+      };
+      await this.handleNewConnection(newConnection);
+    });
   }
 
   private async handleNewConnection(connection: P2PConnection) {
@@ -387,6 +403,7 @@ export class P2PServer {
     connection.write({
       type: MessageType.QUERY_LATEST_BLOCK,
     });
+    Logger.warn(`${this.server?.options.host}:${this.port}`);
   }
 
   private async getConnection(endpoint: string, throwOnFailure = false) {
