@@ -6,6 +6,7 @@ This sample code helps get you started with blockchain technology. Or at least s
 Status
 -----------
 ![Nodejs CI](https://github.com/woozchucky/pau/actions/workflows/node.js.yml/badge.svg)
+![Docker Image](https://github.com/woozchucky/pau/actions/workflows/docker-image.yml/badge.svg)
 ![Dependency Review](https://github.com/woozchucky/pau/actions/workflows/dependency-review.yml/badge.svg)
 ![Code Quality](https://github.com/woozchucky/pau/actions/workflows/codeql.yml/badge.svg)
 
