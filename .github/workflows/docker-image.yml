@@ -14,5 +14,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: List contents
+      run: ls -la
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag pau:latest
