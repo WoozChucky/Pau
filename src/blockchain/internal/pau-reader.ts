@@ -1,14 +1,17 @@
 import * as Buffer from 'buffer';
 
-import * as PBuffer from './buffer-operations';
+import { Decoder } from './buffer-operations';
 
 export class PauReader {
   public size: number;
   public dataView: DataView;
 
+  private readonly decoder: Decoder;
+
   constructor(public buffer: Buffer, public offset: number = 0) {
     this.size = buffer.byteLength;
     this.dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    this.decoder = new Decoder();
   }
 
   isParsing(): boolean {
@@ -36,8 +39,8 @@ export class PauReader {
   }
 
   eatVarUint(): number {
-    const value = PBuffer.decode(this.buffer, this.offset);
-    this.offset += PBuffer.decode.bytes;
+    const value = this.decoder.decode(this.buffer, this.offset);
+    this.offset += this.decoder.bytes;
     return value;
   }
 
