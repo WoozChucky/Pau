@@ -1,6 +1,9 @@
 import { createHash } from 'crypto';
 
+import ripemd160lib from 'ripemd160';
+
 export function ripemd160(buffer: Uint8Array): Buffer {
+  // eslint-disable-next-line @babel/new-cap
   return new ripemd160lib().update(buffer).digest();
 }
 
