@@ -9,6 +9,7 @@ Status
 ![Docker Image](https://github.com/woozchucky/pau/actions/workflows/docker-image.yml/badge.svg)
 ![Dependency Review](https://github.com/woozchucky/pau/actions/workflows/dependency-review.yml/badge.svg)
 ![Code Quality](https://github.com/woozchucky/pau/actions/workflows/codeql.yml/badge.svg)
+![codecov](https://codecov.io/github/WoozChucky/Pau/branch/develop/graph/badge.svg?token=GBVL8J26KC)
 
 What's Here
 -----------
@@ -69,6 +70,12 @@ Development Scripts
 5. Run Linter
     
        $ npm run lint
+
+Project Coverage
+----------------
+
+![Coverage](https://codecov.io/github/WoozChucky/Pau/branch/develop/graphs/tree.svg?token=GBVL8J26KC)
+
 
 What Do I Do Next?
 ------------------
