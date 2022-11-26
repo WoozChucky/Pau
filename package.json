@@ -31,6 +31,7 @@
     "@pskzcompany/winston-graylog": "^1.0.1",
     "argparse": "^2.0.1",
     "async-mutex": "^0.4.0",
+    "base-x": "^4.0.0",
     "cookie-parser": "^1.4.6",
     "crypto-js": "^4.1.1",
     "csurf": "^1.11.0",

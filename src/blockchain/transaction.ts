@@ -1,7 +1,7 @@
 import { encodingLength } from './internal/buffer-operations';
 import { PauWriter } from './internal/pau-writer';
 import { PauReader } from './internal/pau-reader';
-import { EmptyScript } from './block';
+import { Block, EmptyScript } from './block';
 import { doubleSHA256 } from './utils';
 
 /**
@@ -43,6 +43,13 @@ export class Input {
     public scriptSig: Uint8Array,
     public sequenceNumber: number,
   ) {}
+}
+
+export interface UTXO {
+  block: Block;
+  transaction: Transaction;
+  outputIndex: number;
+  amount: bigint;
 }
 
 export class Transaction {
