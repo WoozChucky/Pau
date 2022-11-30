@@ -41,7 +41,7 @@
     "elliptic": "^6.5.4",
     "errorhandler": "^1.5.1",
     "express": "~4.18.2",
-    "helmet": "^6.0.0",
+    "helmet": "^6.0.1",
     "js-sha3": "^0.8.0",
     "leveldown": "^6.1.1",
     "levelup": "^5.1.1",
