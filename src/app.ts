@@ -1,75 +1,66 @@
-import { HttpServer } from './httpServer/server';
-import { initWallet } from './blockchain/wallet';
-import { Application } from './application';
+/* eslint-disable @typescript-eslint/naming-convention */
+
 import { ArgumentParser } from 'argparse';
 
-let argParser = new ArgumentParser({
-    version: '0.0.1',
-    addHelp: true,
-    description: "Description"
+import { Application } from './application';
+import { Settings } from './config';
+import { Logger } from './utils/logging';
+
+// TODO: Move this out of here
+function getParsedArgument(arg: any) {
+  if (Array.isArray(arg)) {
+    return arg[0];
+  } else {
+    return arg;
+  }
+}
+
+const argParser = new ArgumentParser({
+  add_help: true,
+  description: 'Description',
+  exit_on_error: true,
 });
 
-argParser.addArgument(
-    ['--http-port'],
-    {
-        help: "--http-port 3000",
-        type: 'int',
-        defaultValue: 3000,
-        nargs: 1,
-        dest: 'HTTP_PORT',
-        metavar: '<HTTP_PORT>'
-    }
-);
+argParser.add_argument('-n', '--name', {
+  help: '--name node1',
+  type: 'str',
+  required: true,
+  nargs: 1,
+  dest: 'name',
+  metavar: '<NAME>',
+});
 
-argParser.addArgument(
-    ['--p2p-port'],
-    {
-        help: "--p2p-port 6000",
-        type: 'int',
-        defaultValue: 6000,
-        nargs: 1,
-        dest: 'P2P_PORT',
-        metavar: '<P2P_PORT>',
-    }
-);
+argParser.add_argument('-host', '--hostname', {
+  help: '--hostname 0.0.0.0',
+  default: '0.0.0.0',
+  type: 'str',
+  required: false,
+  nargs: 1,
+  dest: 'hostname',
+  metavar: '<HOSTNAME>',
+});
 
-argParser.addArgument(
-    ['--data'],
-    {
-        help: "--data dist/data/db",
-        type: 'string',
-        defaultValue: 'dist/data/db',
-        nargs: 1,
-        dest: 'DATA',
-        metavar: '<DATA>'
-    }
-);
+argParser.add_argument('-p', '--port', {
+  default: 3000,
+  type: 'int',
+  nargs: 1,
+  dest: 'port',
+  help: '--port 3000',
+  metavar: '<PORT>',
+  required: false,
+});
 
-argParser.addArgument(
-    ['--name'],
-    {
-        help: "--name node1",
-        type: 'string',
-        required: true,
-        nargs: 1,
-        dest: 'NAME',
-        metavar: '<NAME>'
-    }
-);
+const parsedArgs = argParser.parse_args();
 
-let parsedArgs = argParser.parseArgs();
+Logger.info(`Parsed Arguments: ${parsedArgs}`, parsedArgs);
 
-console.log(parsedArgs);
+const hostname = getParsedArgument(parsedArgs.hostname);
+const port = getParsedArgument(parsedArgs.port);
+const name = getParsedArgument(parsedArgs.name);
 
-let httpPort = parsedArgs["HTTP_PORT"];
-let p2pPort = parsedArgs["P2P_PORT"];
-let dataFolder = parsedArgs["DATA"];
-let name = parsedArgs["NAME"][0];
+const appInstance = new Application(port, name, Settings.DataFolder, hostname);
 
-//let server = new Server();
-
-//server.listen(httpPort, p2pPort, initialPeers);
-
-//initWallet();
-
-new Application(httpPort, p2pPort, name, dataFolder).initialize();
+appInstance
+  .initialize()
+  .then(() => Logger.info(`Node ${name} UP and running...`))
+  .catch((err) => Logger.error(`Node ${name} failed to start. ${err}`));
