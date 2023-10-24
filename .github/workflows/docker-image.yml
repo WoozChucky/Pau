@@ -17,7 +17,7 @@ jobs:
     - name: List contents
       run: ls -la
     - name: npm install
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: 18.x
         cache: 'npm'
