@@ -1,9 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
-import { Get, Route, Tags, Post, Body, Path } from 'tsoa';
 
 import { BlockchainManager } from '../../blockchain/blockchain-manager';
 import { P2PServer } from '../../p2p/p2p-server';
-import { Block } from '../../model/block';
 
 /**
  * Gets the entire chain
