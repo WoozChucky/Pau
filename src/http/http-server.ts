@@ -1,7 +1,6 @@
 import * as http from 'http';
 import { Server } from 'http';
 
-import swaggerUi from 'swagger-ui-express';
 import express, { Express } from 'express';
 import errorHandler from 'errorhandler';
 import cookieParser from 'cookie-parser';
@@ -92,16 +91,6 @@ export class HttpServer {
     this.app.use(csrf({ cookie: true }));
 
     this.app.use(express.static('public'));
-
-    this.app.use(
-      '/docs',
-      swaggerUi.serve,
-      swaggerUi.setup(undefined, {
-        swaggerOptions: {
-          url: '/swagger.json',
-        },
-      })
-    );
 
     // catch 404 and forward to error handler
     this.app.use(function (
