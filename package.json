@@ -39,7 +39,7 @@
     "errorhandler": "^1.5.1",
     "express": "~4.19.2",
     "helmet": "^6.0.1",
-    "js-sha3": "^0.8.0",
+    "js-sha3": "^0.9.3",
     "leveldown": "^6.1.1",
     "levelup": "^5.1.1",
     "lodash": "^4.17.21",
