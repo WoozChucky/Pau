@@ -1,4 +1,4 @@
-FROM node:22.3.0-slim
+FROM node:22.5.1-slim
 #EXPOSE 8080
 
 ENV NODE_ENV=production
