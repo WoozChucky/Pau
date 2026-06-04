@@ -10,3 +10,18 @@ dist/
 \.idea/
 
 \.DS_Store
+
+/logs/
+
+/public/swagger.json
+
+.env
+
+/data/
+/data1/
+/data2/
+/data3/
+/data4/
+
+data2 /logs/
+/coverage/

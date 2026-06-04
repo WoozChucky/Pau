@@ -1,35 +1,38 @@
-Welcome to the AWS CodeStar sample web service
+Welcome to the worst blockchain implementation ever seen
 ==============================================
 
-This sample code helps get you started with a simple Express web service
-deployed by AWS CodeDeploy to an Amazon EC2 instance.
+This sample code helps get you started with blockchain technology. Or at least should <.<
+
+Status
+-----------
+![Nodejs CI](https://github.com/woozchucky/pau/actions/workflows/node.js.yml/badge.svg)
+![Docker Image](https://github.com/woozchucky/pau/actions/workflows/docker-image.yml/badge.svg)
+![Dependency Review](https://github.com/woozchucky/pau/actions/workflows/dependency-review.yml/badge.svg)
+![Code Quality](https://github.com/woozchucky/pau/actions/workflows/codeql.yml/badge.svg)
+![codecov](https://codecov.io/github/WoozChucky/Pau/branch/develop/graph/badge.svg?token=GBVL8J26KC)
 
 What's Here
 -----------
 
 This sample includes:
 
-* README.md - this file
-* server.js - this file contains the code for your service
-* appspec.yml - this file is used by AWS CodeDeploy when deploying the web
-  service to EC2
-* package.json - this file contains various metadata relevant to your Node.js
-  service such as dependencies
-* scripts/ - this directory contains scripts used by AWS CodeDeploy when
-  installing and deploying your service on the Amazon EC2 instance
+* HTTP API
+* P2P Protocol
+* [Wallet Concept](docs/blockchain/wallet/README.md)
+* Nodes Discovery
+* Local Database
+* Cryptography
+* and last, but not least... awful code!
 
 
 Getting Started
 ---------------
 
-These directions assume you want to develop on your local computer, and not
-from the Amazon EC2 instance itself. If you're on the Amazon EC2 instance, the
-virtual environment is already set up for you, and you can start working on the
-code.
+These directions assume you want to develop some sort of DApp (Decentralized Application) on your local computer, and not
+from wherever it is you want to host your nodes. (At least when starting)
 
 To work on the sample code, you'll need to clone your project's repository to your
-local computer. If you haven't, do that first. You can find instructions in the
-AWS CodeStar user guide.
+local computer. If you haven't, do that first. You can find instructions @ Google and GitHub on how to clone a repository.
 
 1. Install Node.js on your computer.  For details on available installers visit
    https://nodejs.org/en/download/.
@@ -38,25 +41,55 @@ AWS CodeStar user guide.
 
         $ npm install
 
-3. Start the development server:
+3. Start the development node (starts a node names master):
 
-        $ node server.js
+        $ npm start
 
-4. Open http://127.0.0.1:3000/ in a web browser to view your service.
+4. Open http://127.0.0.1:3000/v1/status in a web browser to view your service details.
+
+
+Development Scripts
+-------------------
+
+1. Start a single node
+
+       $ npm start
+
+2. Start a single node watching for changes
+
+        $ npm run start:watch
+
+3. Start a single node watching for changes and build to /dist folder
+
+        $ npm run start:dev
+
+4. Build to /dist folder
+
+        $ npm run build
+
+5. Run Linter
+    
+       $ npm run lint
+
+Project Coverage
+----------------
+
+![Coverage](https://codecov.io/github/WoozChucky/Pau/branch/develop/graphs/tree.svg?token=GBVL8J26KC)
+
 
 What Do I Do Next?
 ------------------
 
-Once you have a virtual environment running, you can start making changes to
-the sample Express web service. We suggest making a small change to
-server.js first, so you can see how changes pushed to your project's
-repository are automatically picked up by your project pipeline and deployed to
-the Amazon EC2 instance. (You can watch the progress on your project dashboard.)
-Once you've seen how that works, start developing your own code, and have fun!
+Once you managed to keep your node running without it crashing in the first 5 minutes,
+look for the api routes, try to understand what they do, fail miserably and open an issue about the non existent documentation.
 
-Learn more about AWS CodeStar by reading the user guide.  Ask questions or make
-suggestions on our forum.
+Now seriously, this is the most alpha project you will ever find on GitHub, i'm also still learning so don't expect to use this in any production environment.
+I plan to write some real documentation which should provide some help about where to start, but only after i feel this can actually be used by other developers.
 
-User Guide: http://docs.aws.amazon.com/codestar/latest/userguide/welcome.html
+In case you REALLY want to help me out in any way or have a problem, contact me at nuno.levezinho@live.com.pt
 
-Forum: https://forums.aws.amazon.com/forum.jspa?forumID=248
+(When I have time I'll try to actually write a proper README, until then, good luck!)
+
+LICENSE
+------------------
+All code here provided is under MIT license.
